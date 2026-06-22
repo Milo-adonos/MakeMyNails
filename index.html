@@ -6,16 +6,132 @@
     <link rel="apple-touch-icon" href="/logo.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#FAF6F1" />
-    <style>
-      html, body, #root { min-height: 100%; background-color: #FAF6F1; }
-    </style>
+    <link rel="preload" as="image" href="/logo.webp" type="image/webp" />
+    <link rel="preload" as="image" href="/before.webp" type="image/webp" />
+    <link rel="preload" as="image" href="/after-1.webp" type="image/webp" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600&display=swap" />
+    </noscript>
+    <style>
+      :root {
+        --offwhite: #FAF6F1;
+        --brown: #2C1A12;
+        --brown-light: #5C3D2E;
+        --brown-medium: #8B5E3C;
+        --nude: #F2D4C8;
+      }
+      html, body, #root { min-height: 100%; margin: 0; }
+      body {
+        font-family: Inter, system-ui, sans-serif;
+        color: var(--brown);
+        background: var(--offwhite);
+        -webkit-font-smoothing: antialiased;
+      }
+      #app-shell { min-height: 100svh; background: var(--offwhite); }
+      .shell-nav {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+        background: rgba(255,255,255,.65);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(255,255,255,.5);
+      }
+      .shell-nav-inner {
+        max-width: 72rem; margin: 0 auto; padding: 0 1rem;
+        height: 4rem; display: flex; align-items: center; justify-content: space-between;
+      }
+      .shell-brand { display: flex; align-items: center; gap: .5rem; text-decoration: none; color: inherit; }
+      .shell-brand img { width: 2rem; height: 2rem; border-radius: .75rem; object-fit: cover; }
+      .shell-brand span {
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: 1.25rem; font-weight: 600;
+      }
+      .shell-login {
+        background: var(--brown); color: var(--offwhite);
+        padding: .5rem 1.25rem; border-radius: .75rem;
+        font-size: .875rem; font-weight: 500; text-decoration: none;
+      }
+      .shell-hero {
+        min-height: 100svh; padding: 5rem 1rem 4rem;
+        display: flex; align-items: center; box-sizing: border-box;
+      }
+      .shell-hero-inner {
+        max-width: 72rem; margin: 0 auto; width: 100%;
+        display: grid; gap: 3rem; align-items: center;
+      }
+      @media (min-width: 768px) {
+        .shell-hero-inner { grid-template-columns: 1fr 1fr; }
+      }
+      .shell-badge {
+        display: inline-flex; background: rgba(242,212,200,.5);
+        padding: .5rem 1rem; border-radius: 9999px;
+        font-size: .875rem; color: var(--brown-light); margin-bottom: 1.5rem;
+      }
+      .shell-title {
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: clamp(2.5rem, 6vw, 4.5rem);
+        font-weight: 700; line-height: 1.1; margin: 0 0 1.5rem;
+        color: var(--brown);
+      }
+      .shell-title em { font-style: italic; color: var(--brown-medium); }
+      .shell-subtitle {
+        font-size: 1.125rem; line-height: 1.7; color: rgba(92,61,46,.8);
+        max-width: 28rem; margin: 0 0 2rem;
+      }
+      .shell-cta {
+        display: inline-block; background: var(--brown); color: var(--offwhite);
+        padding: 1rem 1.75rem; border-radius: 1rem;
+        font-size: 1rem; font-weight: 600; text-decoration: none;
+      }
+      .shell-visual {
+        aspect-ratio: 1; max-width: 28rem; margin: 0 auto; width: 100%;
+        border-radius: 2rem; overflow: hidden;
+        display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+        background: var(--nude);
+      }
+      .shell-visual img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    </style>
     <title>MakeMyNails — Visualisez vos ongles parfaits</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="app-shell">
+        <header class="shell-nav">
+          <div class="shell-nav-inner">
+            <a class="shell-brand" href="/">
+              <img src="/logo.webp" alt="" width="32" height="32" />
+              <span>MakeMyNails</span>
+            </a>
+            <a class="shell-login" href="/login">Connexion</a>
+          </div>
+        </header>
+        <section class="shell-hero">
+          <div class="shell-hero-inner">
+            <div>
+              <div class="shell-badge">💅 Tes ongles parfaits, enfin.</div>
+              <h1 class="shell-title">
+                Tombe amoureuse <em>de tes ongles</em> avant même de les avoir.
+              </h1>
+              <p class="shell-subtitle">
+                Prends une photo de tes mains, choisis ton style et vois le résultat en quelques secondes. Sur tes vraies mains.
+              </p>
+              <a class="shell-cta" href="/onboarding">Essayer sur mes mains →</a>
+            </div>
+            <div class="shell-visual" aria-hidden="true">
+              <img src="/before.webp" alt="" width="400" height="400" fetchpriority="high" />
+              <img src="/after-1.webp" alt="" width="400" height="400" fetchpriority="high" />
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

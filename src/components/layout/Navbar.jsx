@@ -1,5 +1,4 @@
 import { Link, useLocation } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { User, Home, History, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -43,11 +42,7 @@ export default function Navbar() {
         </div>
 
         {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="border-t border-nude/30 px-4 pb-4"
-          >
+          <div className="border-t border-nude/30 px-4 pb-4">
             {links.map((link) => (
               <Link
                 key={link.to}
@@ -61,7 +56,7 @@ export default function Navbar() {
                 <span className="font-medium">{link.label}</span>
               </Link>
             ))}
-          </motion.div>
+          </div>
         )}
       </nav>
 

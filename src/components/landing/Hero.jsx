@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -26,17 +25,12 @@ export default function Hero() {
     '/after-14.webp',
   ]
 
-  const examples = afterImages.map((src, i) => ({
-    after: src,
-    badge: t(`hero.examples.${i}.badge`),
-  }))
-
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrent((c) => (c + 1) % examples.length)
+      setCurrent((c) => (c + 1) % afterImages.length)
     }, 3500)
     return () => clearInterval(timer)
-  }, [examples.length])
+  }, [afterImages.length])
 
   return (
     <section className="relative min-h-svh pt-20 pb-16 flex flex-col justify-center overflow-hidden">
@@ -78,26 +72,34 @@ export default function Hero() {
               <div className="absolute inset-0 rounded-[2rem] overflow-hidden">
                 <div className="grid grid-cols-2 h-full gap-1">
                   <div className="relative">
-                    <img src="/before.webp" alt={t('hero.before')} className="w-full h-full object-cover" />
-                    <span className="absolute bottom-3 left-0 right-0 text-center text-xs font-medium text-white/80 uppercase tracking-wider drop-shadow">{t('hero.before')}</span>
+                    <img
+                      src="/before.webp"
+                      alt={t('hero.before')}
+                      className="w-full h-full object-cover"
+                      fetchPriority="high"
+                      decoding="async"
+                    />
+                    <span className="absolute bottom-3 left-0 right-0 text-center text-xs font-medium text-white/80 uppercase tracking-wider drop-shadow">
+                      {t('hero.before')}
+                    </span>
                   </div>
                   <div className="relative overflow-hidden bg-nude/20">
-                    <AnimatePresence mode="sync">
-                      <motion.img
-                        key={current}
-                        src={examples[current].after}
+                    {afterImages.map((src, i) => (
+                      <img
+                        key={src}
+                        src={src}
                         alt={t('hero.after')}
-                        className="absolute inset-0 w-full h-full object-cover"
-                        initial={{ opacity: current === 0 ? 1 : 0 }}
-                        animate={{ opacity: 1, scale: 1.05 }}
-                        exit={{ opacity: 0 }}
-                        transition={{
-                          opacity: { duration: 0.6, ease: 'easeInOut' },
-                          scale: { duration: 3.5, ease: 'linear' },
-                        }}
+                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
+                          i === current ? 'opacity-100' : 'opacity-0'
+                        }`}
+                        fetchPriority={i === 0 ? 'high' : 'low'}
+                        loading={i === 0 ? 'eager' : 'lazy'}
+                        decoding="async"
                       />
-                    </AnimatePresence>
-                    <span className="absolute bottom-3 left-0 right-0 text-center text-xs font-medium text-white/80 uppercase tracking-wider drop-shadow z-10">{t('hero.after')}</span>
+                    ))}
+                    <span className="absolute bottom-3 left-0 right-0 text-center text-xs font-medium text-white/80 uppercase tracking-wider drop-shadow z-10">
+                      {t('hero.after')}
+                    </span>
                   </div>
                 </div>
               </div>

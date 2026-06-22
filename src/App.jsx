@@ -1,44 +1,60 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import Navbar from './components/layout/Navbar'
+import { lazy, Suspense } from 'react'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import ScrollToTop from './components/layout/ScrollToTop'
 import Landing from './pages/Landing'
-import Login from './pages/Login'
-import Onboarding from './pages/Onboarding'
-import Dashboard from './pages/Dashboard'
-import HistoryPage from './pages/HistoryPage'
-import Profile from './pages/Profile'
-import Purchase from './pages/Purchase'
-import PurchaseSuccess from './pages/PurchaseSuccess'
-import AuthCallback from './pages/AuthCallback'
-import Result from './pages/Result'
 import { useAuth } from './contexts/AuthContext'
+
+const Navbar = lazy(() => import('./components/layout/Navbar'))
+
+const Login = lazy(() => import('./pages/Login'))
+const Onboarding = lazy(() => import('./pages/Onboarding'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const HistoryPage = lazy(() => import('./pages/HistoryPage'))
+const Profile = lazy(() => import('./pages/Profile'))
+const Purchase = lazy(() => import('./pages/Purchase'))
+const PurchaseSuccess = lazy(() => import('./pages/PurchaseSuccess'))
+const AuthCallback = lazy(() => import('./pages/AuthCallback'))
+const Result = lazy(() => import('./pages/Result'))
+
+function PageFallback() {
+  return <div className="min-h-screen bg-offwhite" aria-hidden="true" />
+}
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth()
-  if (loading) return null
+  if (loading) return <PageFallback />
   if (!isAuthenticated) return <Navigate to="/" replace />
   return children
 }
 
 export default function App() {
+  const location = useLocation()
+  const isApp = location.pathname.startsWith('/app')
+
   return (
     <div className="min-h-screen bg-offwhite">
       <ScrollToTop />
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/onboarding/pricing" element={<Onboarding />} />
-        <Route path="/result" element={<Result />} />
-        <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/app/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
-        <Route path="/app/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/app/purchase" element={<ProtectedRoute><Purchase /></ProtectedRoute>} />
-        <Route path="/app/purchase/success" element={<ProtectedRoute><PurchaseSuccess /></ProtectedRoute>} />
-        <Route path="/app/result/:id" element={<ProtectedRoute><Result /></ProtectedRoute>} />
-      </Routes>
+      {isApp && (
+        <Suspense fallback={null}>
+          <Navbar />
+        </Suspense>
+      )}
+      <Suspense fallback={<PageFallback />}>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/onboarding/pricing" element={<Onboarding />} />
+          <Route path="/result" element={<Result />} />
+          <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/app/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
+          <Route path="/app/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/app/purchase" element={<ProtectedRoute><Purchase /></ProtectedRoute>} />
+          <Route path="/app/purchase/success" element={<ProtectedRoute><PurchaseSuccess /></ProtectedRoute>} />
+          <Route path="/app/result/:id" element={<ProtectedRoute><Result /></ProtectedRoute>} />
+        </Routes>
+      </Suspense>
     </div>
   )
 }

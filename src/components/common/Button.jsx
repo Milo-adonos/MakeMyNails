@@ -1,5 +1,3 @@
-import { motion } from 'framer-motion'
-
 const variants = {
   primary: 'bg-brown text-offwhite hover:bg-brown-light',
   secondary: 'bg-nude text-brown hover:bg-nude-dark',
@@ -15,20 +13,19 @@ const sizes = {
 
 export default function Button({ children, variant = 'primary', size = 'md', className = '', onClick, disabled, type = 'button', ...props }) {
   return (
-    <motion.button
-      whileHover={{ scale: disabled ? 1 : 1.02 }}
-      whileTap={{ scale: disabled ? 1 : 0.98 }}
+    <button
       type={type}
       onClick={onClick}
       disabled={disabled}
       className={`
-        font-body font-medium rounded-2xl transition-colors duration-200
-        disabled:opacity-50 disabled:cursor-not-allowed
+        font-body font-medium rounded-2xl transition-all duration-200
+        hover:scale-[1.02] active:scale-[0.98]
+        disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
         ${variants[variant]} ${sizes[size]} ${className}
       `}
       {...props}
     >
       {children}
-    </motion.button>
+    </button>
   )
 }
