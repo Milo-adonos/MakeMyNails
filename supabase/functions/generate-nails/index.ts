@@ -1,7 +1,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const NANOBANANA_API = 'https://api.nanobananaapi.ai'
+const KIE_AI_API = 'https://api.kie.ai'
+const KIE_AI_MODEL = 'nano-banana-2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -120,23 +121,26 @@ function buildPrompt(
 }
 
 async function submitGeneration(apiKey: string, imageUrls: string[], prompt: string): Promise<string> {
-  const res = await fetch(`${NANOBANANA_API}/api/v1/nanobanana/generate-pro`, {
+  const res = await fetch(`${KIE_AI_API}/api/v1/jobs/createTask`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      prompt,
-      imageUrls,
-      resolution: '2K',
-      aspectRatio: '3:4',
-      callBackUrl: 'https://noop.example.com/callback',
+      model: KIE_AI_MODEL,
+      input: {
+        prompt,
+        image_input: imageUrls,
+        aspect_ratio: '3:4',
+        resolution: '2K',
+        output_format: 'jpg',
+      },
     }),
   })
 
   const json = await res.json()
-  if (json.code !== 200) throw new Error(json.message || json.msg || 'Generation failed')
+  if (json.code !== 200) throw new Error(json.msg || json.message || 'Generation failed')
   return json.data.taskId
 }
 
@@ -145,18 +149,23 @@ async function pollTaskResult(apiKey: string, taskId: string): Promise<string> {
     await new Promise((r) => setTimeout(r, 3000))
 
     const res = await fetch(
-      `${NANOBANANA_API}/api/v1/nanobanana/record-info?taskId=${taskId}`,
+      `${KIE_AI_API}/api/v1/jobs/recordInfo?taskId=${taskId}`,
       { headers: { 'Authorization': `Bearer ${apiKey}` } },
     )
 
     const json = await res.json()
     if (json.code !== 200) continue
 
-    const { successFlag, response, errorMessage } = json.data
+    const { state, resultJson, failMsg } = json.data
 
-    if (successFlag === 1) return response.resultImageUrl
-    if (successFlag === 2 || successFlag === 3) {
-      throw new Error(errorMessage || 'Generation failed')
+    if (state === 'success') {
+      const result = JSON.parse(resultJson)
+      const url = result.resultUrls?.[0]
+      if (!url) throw new Error('No result image URL')
+      return url
+    }
+    if (state === 'fail') {
+      throw new Error(failMsg || 'Generation failed')
     }
   }
   throw new Error('Generation timed out')
@@ -168,8 +177,8 @@ serve(async (req) => {
   }
 
   try {
-    const nanobananaKey = Deno.env.get('NANOBANANA_API_KEY')
-    if (!nanobananaKey) throw new Error('NANOBANANA_API_KEY not configured')
+    const kieAiKey = Deno.env.get('KIE_AI_API_KEY')
+    if (!kieAiKey) throw new Error('KIE_AI_API_KEY not configured')
 
     const { photoBase64, shape, style, length, customNote, inspirationBase64, outfitBase64 } = await req.json()
 
@@ -210,8 +219,8 @@ serve(async (req) => {
     }
 
     const prompt = buildPrompt(shape, style, length, customNote, !!inspirationBase64, !!outfitBase64)
-    const taskId = await submitGeneration(nanobananaKey, imageUrls, prompt)
-    const resultImageUrl = await pollTaskResult(nanobananaKey, taskId)
+    const taskId = await submitGeneration(kieAiKey, imageUrls, prompt)
+    const resultImageUrl = await pollTaskResult(kieAiKey, taskId)
 
     return new Response(
       JSON.stringify({ resultImageUrl, taskId }),

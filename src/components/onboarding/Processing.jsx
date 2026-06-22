@@ -1,74 +1,64 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useTranslation } from 'react-i18next'
 
-export default function Processing({ onComplete }) {
-  const { t } = useTranslation()
-  const messages = t('onboarding.processing.messages', { returnObjects: true })
+const DEFAULT_MESSAGES = [
+  'Analyse de ta main...',
+  'Création de ton design...',
+  'Finalisation...',
+]
+
+export default function Processing({ duration = 7000, messages = DEFAULT_MESSAGES }) {
   const [messageIndex, setMessageIndex] = useState(0)
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
-    const msgInterval = setInterval(() => {
+    const start = Date.now()
+    const messageInterval = setInterval(() => {
       setMessageIndex((prev) => (prev + 1) % messages.length)
-    }, 1500)
+    }, 2000)
 
     const progressInterval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(progressInterval)
-          clearInterval(msgInterval)
-          setTimeout(onComplete, 500)
-          return 100
-        }
-        return prev + 2
-      })
-    }, 80)
+      const elapsed = Date.now() - start
+      setProgress(Math.min(100, (elapsed / duration) * 100))
+    }, 50)
 
     return () => {
-      clearInterval(msgInterval)
+      clearInterval(messageInterval)
       clearInterval(progressInterval)
     }
-  }, [onComplete])
+  }, [duration, messages])
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-gradient-to-b from-offwhite to-nude-light/30">
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-        className="w-20 h-20 mb-8"
+      <motion.h1
+        animate={{ scale: [1, 1.05, 1] }}
+        transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
+        className="font-heading text-4xl md:text-5xl font-bold text-brown mb-8 text-center tracking-tight"
       >
-        <img src="/logo.webp" alt="MakeMyNails" className="w-full h-full rounded-3xl object-cover shadow-lg shadow-nude-dark/20" />
-      </motion.div>
-
-      <h2 className="font-heading text-3xl font-bold text-brown mb-6">
-        {t('onboarding.processing.title')}
-      </h2>
-
-      <div className="w-full max-w-xs mb-6">
-        <div className="h-2 bg-nude/30 rounded-full overflow-hidden">
-          <motion.div
-            className="h-full bg-gradient-to-r from-nude-dark to-beige-dark rounded-full"
-            style={{ width: `${progress}%` }}
-            transition={{ duration: 0.3 }}
-          />
-        </div>
-        <div className="text-right mt-1">
-          <span className="text-xs text-brown-light/50">{Math.round(progress)}%</span>
-        </div>
-      </div>
+        MakeMyNails.app
+      </motion.h1>
 
       <AnimatePresence mode="wait">
         <motion.p
           key={messageIndex}
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          className="text-brown-light/60 text-sm"
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.3 }}
+          className="font-heading text-xl text-brown mb-8 text-center min-h-[2rem]"
         >
           {messages[messageIndex]}
         </motion.p>
       </AnimatePresence>
+
+      <div className="w-full max-w-xs">
+        <div className="h-1 bg-nude/40 rounded-full overflow-hidden">
+          <motion.div
+            className="h-full bg-gradient-to-r from-nude-dark to-beige-dark rounded-full"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
     </div>
   )
 }

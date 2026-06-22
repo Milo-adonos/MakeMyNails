@@ -91,7 +91,7 @@ export default function PhotoCapture({ onNext, onBack, onPhotoSelect }) {
 
         <div className="flex gap-3 w-full">
           <Button variant="ghost" onClick={onBack} className="flex-1">{t('onboarding.back')}</Button>
-          <Button onClick={onNext} disabled={!preview} className="flex-1">{t('onboarding.continue')}</Button>
+          <Button onClick={() => onNext(preview)} disabled={!preview} className="flex-1">{t('onboarding.continue')}</Button>
         </div>
       </div>
 

@@ -32,9 +32,10 @@ export const PACKS = [
 export const SUBSCRIPTION = {
   id: 'sub_premium',
   name: 'Premium',
-  price: 14.99,
+  price: 9.99,
+  stripePriceId: 'price_1TlDXnCyclTOEYV4DD3Qrbdt',
   credits: 50,
-  pricePerCredit: 0.30,
+  pricePerCredit: 0.20,
   period: 'mois',
 }
 

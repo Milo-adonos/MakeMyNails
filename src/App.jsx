@@ -28,6 +28,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/onboarding/pricing" element={<Onboarding />} />
         <Route path="/result" element={<Result />} />
         <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/app/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />

@@ -47,7 +47,7 @@ export default function LengthSelector({ onNext, onBack, selected, onSelect }) {
 
         <div className="flex gap-3 w-full">
           <Button variant="ghost" onClick={onBack} className="flex-1">{t('onboarding.back')}</Button>
-          <Button onClick={onNext} disabled={!selected} className="flex-1">{t('onboarding.continue')}</Button>
+          <Button onClick={() => onNext(selected)} disabled={!selected} className="flex-1">{t('onboarding.continue')}</Button>
         </div>
       </div>
     </div>

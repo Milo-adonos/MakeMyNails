@@ -4,201 +4,171 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { AlertCircle, RotateCcw } from 'lucide-react'
 import Welcome from '../components/onboarding/Welcome'
 import PhotoCapture from '../components/onboarding/PhotoCapture'
+import InspirationCapture from '../components/onboarding/InspirationCapture'
 import ShapeSelector from '../components/onboarding/ShapeSelector'
 import StyleSelector from '../components/onboarding/StyleSelector'
 import LengthSelector from '../components/onboarding/LengthSelector'
 import Processing from '../components/onboarding/Processing'
+import BlurredResult from '../components/onboarding/BlurredResult'
+import FunnelSignup from '../components/onboarding/FunnelSignup'
+import FunnelPricing from '../components/onboarding/FunnelPricing'
 import { generateNailVisualization } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useCredits } from '../contexts/CreditContext'
+
+const INSPO_DEFAULTS = { shape: 'oval', style: 'nailart', length: 'medium' }
 
 export default function Onboarding() {
   const navigate = useNavigate()
   const location = useLocation()
   const { isAuthenticated } = useAuth()
-  const { canGenerate, createVisualization, completeVisualization, uploadBlobUrl } = useCredits()
-  const generationStarted = useRef(false)
+  const { createVisualization, completeVisualization, uploadBlobUrl } = useCredits()
+  const generationRef = useRef(null)
+
+  const [step, setStep] = useState('welcome')
+  const [result, setResult] = useState(null)
   const [generationError, setGenerationError] = useState(null)
+  const [skipStyleSteps, setSkipStyleSteps] = useState(false)
 
-  const preselected = location.state || {}
-  const hasPreselection = preselected.preselectedShape || preselected.preselectedStyle || preselected.preselectedLength
-
-  const [step, setStep] = useState(hasPreselection ? 5 : 0)
   const [data, setData] = useState({
-    photo: preselected.photo || null,
-    shape: preselected.preselectedShape || null,
-    style: preselected.preselectedStyle || null,
-    length: preselected.preselectedLength || null,
+    photo: null,
+    shape: null,
+    style: null,
+    length: null,
     customNote: '',
     inspirationPhoto: null,
-    outfitPhoto: preselected.outfitPhoto || null,
+    outfitPhoto: null,
   })
 
-  const next = () => setStep((s) => s + 1)
-  const back = () => setStep((s) => Math.max(0, s - 1))
+  useEffect(() => {
+    if (location.pathname === '/onboarding/pricing') {
+      setStep('pricing')
+    }
+  }, [location.pathname])
 
   useEffect(() => {
-    if (hasPreselection && step === 5 && !generationStarted.current) {
-      if (isAuthenticated && !canGenerate()) {
-        navigate('/app/purchase')
-        return
-      }
-
-      if (!preselected.photo) {
-        generationStarted.current = false
-        setStep(1)
-        return
-      }
-
-      generationStarted.current = true
-      ;(async () => {
-        try {
-          const genData = {
-            photo: preselected.photo,
-            shape: preselected.preselectedShape,
-            style: preselected.preselectedStyle,
-            length: preselected.preselectedLength,
-            customNote: '',
-            inspirationPhoto: null,
-            outfitPhoto: preselected.outfitPhoto || null,
-          }
-
-          let vizId = null
-          if (isAuthenticated) {
-            const originalImageUrl = await uploadBlobUrl(genData.photo)
-            const vizResult = await createVisualization({
-              shape: genData.shape,
-              style: genData.style,
-              length: genData.length,
-              originalImageUrl,
-            })
-            vizId = vizResult?.visualization_id
-          }
-
-          const result = await generateNailVisualization(genData)
-
-          if (isAuthenticated && vizId && result.resultImage) {
-            await completeVisualization(vizId, result.resultImage)
-          }
-
-          navigate('/result', {
-            state: { result, locked: !isAuthenticated },
-          })
-        } catch (err) {
-          console.error(err)
-          generationStarted.current = false
-          setGenerationError(err.message || 'Une erreur est survenue.')
-        }
-      })()
+    if (isAuthenticated && step === 'signup') {
+      setStep('pricing')
     }
-  }, [hasPreselection, step])
+  }, [isAuthenticated, step])
 
-  const handleGenerate = useCallback(async () => {
-    if (!data.photo) {
-      setStep(1)
-      return
-    }
+  const goTo = (nextStep) => setStep(nextStep)
 
-    if (isAuthenticated && !canGenerate()) {
-      navigate('/app/purchase')
-      return
-    }
-
-    next()
-
-    try {
-      let vizId = null
-      if (isAuthenticated) {
-        const originalImageUrl = await uploadBlobUrl(data.photo)
-        const vizResult = await createVisualization({
-          shape: data.shape,
-          style: data.style,
-          length: data.length,
-          originalImageUrl,
-        })
-        vizId = vizResult?.visualization_id
-      }
-
-      const result = await generateNailVisualization(data)
-
-      if (isAuthenticated && vizId && result.resultImage) {
-        await completeVisualization(vizId, result.resultImage)
-      }
-
-      navigate('/result', {
-        state: {
-          result,
-          locked: !isAuthenticated,
-        },
+  const runGeneration = useCallback(async (genData) => {
+    let vizId = null
+    if (isAuthenticated) {
+      const originalImageUrl = await uploadBlobUrl(genData.photo)
+      const vizResult = await createVisualization({
+        shape: genData.shape,
+        style: genData.style,
+        length: genData.length,
+        originalImageUrl,
       })
-    } catch (err) {
-      console.error(err)
-      setGenerationError(err.message || 'Une erreur est survenue.')
+      vizId = vizResult?.visualization_id
     }
-  }, [data, navigate, isAuthenticated, canGenerate, createVisualization, completeVisualization, uploadBlobUrl])
 
-  const steps = [
-    <Welcome key="welcome" onNext={next} />,
-    <PhotoCapture
-      key="photo"
-      onNext={next}
-      onBack={back}
-      onPhotoSelect={(photo) => setData((d) => ({ ...d, photo }))}
-    />,
-    <ShapeSelector
-      key="shape"
-      onNext={next}
-      onBack={back}
-      selected={data.shape}
-      onSelect={(shape) => setData((d) => ({ ...d, shape }))}
-    />,
-    <StyleSelector
-      key="style"
-      onNext={next}
-      onBack={back}
-      selected={data.style}
-      onSelect={(style) => setData((d) => ({ ...d, style, inspirationPhoto: style !== 'nailart' ? null : d.inspirationPhoto }))}
-      customNote={data.customNote}
-      onCustomNote={(customNote) => setData((d) => ({ ...d, customNote }))}
-      inspirationPhoto={data.inspirationPhoto}
-      onInspirationPhoto={(inspirationPhoto) => setData((d) => ({ ...d, inspirationPhoto }))}
-    />,
-    <LengthSelector
-      key="length"
-      onNext={handleGenerate}
-      onBack={back}
-      selected={data.length}
-      onSelect={(length) => setData((d) => ({ ...d, length }))}
-    />,
-    <Processing key="processing" onComplete={() => {}} />,
-  ]
+    const generated = await generateNailVisualization(genData)
 
-  const progressPercent = ((step) / (steps.length - 1)) * 100
+    if (isAuthenticated && vizId && generated.resultImage) {
+      await completeVisualization(vizId, generated.resultImage)
+    }
+
+    return generated
+  }, [isAuthenticated, createVisualization, completeVisualization, uploadBlobUrl])
+
+  const enterProcessing = useCallback((genData) => {
+    if (!genData.photo) {
+      goTo('photo')
+      return
+    }
+    generationRef.current = runGeneration(genData)
+      .then((res) => {
+        setResult(res)
+        return res
+      })
+      .catch((err) => {
+        setGenerationError(err.message || 'Une erreur est survenue.')
+        throw err
+      })
+    goTo('processing')
+  }, [runGeneration])
+
+  useEffect(() => {
+    if (step !== 'processing' || !generationRef.current) return
+
+    let cancelled = false
+
+    Promise.all([
+      new Promise((r) => setTimeout(r, 7000)),
+      generationRef.current,
+    ])
+      .then(([, res]) => {
+        if (!cancelled && res) goTo('result')
+      })
+      .catch(() => {
+        if (!cancelled) generationRef.current = null
+      })
+
+    return () => { cancelled = true }
+  }, [step])
+
+  const handleInspirationNext = (inspirationUrl) => {
+    if (inspirationUrl) {
+      setSkipStyleSteps(true)
+      const genData = {
+        ...data,
+        inspirationPhoto: inspirationUrl,
+        shape: INSPO_DEFAULTS.shape,
+        style: INSPO_DEFAULTS.style,
+        length: INSPO_DEFAULTS.length,
+      }
+      setData((d) => ({ ...d, ...genData }))
+      enterProcessing(genData)
+    }
+  }
+
+  const handleInspirationSkip = () => {
+    setSkipStyleSteps(false)
+    goTo('shape')
+  }
+
+  const handleLengthNext = (length) => {
+    const genData = { ...data, length: length || data.length }
+    if (!genData.shape || !genData.style || !genData.length) return
+    enterProcessing(genData)
+  }
+
+  const handleUnlock = () => {
+    if (isAuthenticated) {
+      goTo('pricing')
+      navigate('/onboarding/pricing', { replace: true })
+    } else {
+      goTo('signup')
+    }
+  }
+
+  const showProgress = ['photo', 'inspiration', 'shape', 'style', 'length'].includes(step)
+  const progressSteps = skipStyleSteps
+    ? ['photo', 'inspiration']
+    : ['photo', 'inspiration', 'shape', 'style', 'length']
+  const progressPercent = showProgress
+    ? ((progressSteps.indexOf(step) + 1) / progressSteps.length) * 100
+    : 0
 
   if (generationError) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-gradient-to-b from-offwhite to-nude-light/30">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center max-w-sm"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center max-w-sm">
           <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-5">
             <AlertCircle className="w-8 h-8 text-red-400" />
           </div>
-          <h2 className="font-heading text-2xl font-bold text-brown mb-3">
-            Oups, une erreur est survenue.
-          </h2>
-          <p className="text-brown-light/60 text-sm mb-2 leading-relaxed">
-            La génération a échoué. Vérifie ta connexion et réessaie.
-          </p>
-          <p className="text-red-400/70 text-xs mb-8 font-mono bg-red-50 rounded-xl px-3 py-2">
-            {generationError}
-          </p>
+          <h2 className="font-heading text-2xl font-bold text-brown mb-3">Oups, une erreur est survenue.</h2>
+          <p className="text-red-400/70 text-xs mb-8 font-mono bg-red-50 rounded-xl px-3 py-2">{generationError}</p>
           <button
             onClick={() => {
               setGenerationError(null)
-              setStep(4)
+              generationRef.current = null
+              goTo(skipStyleSteps ? 'inspiration' : 'length')
             }}
             className="w-full bg-brown text-offwhite py-4 rounded-2xl font-semibold flex items-center justify-center gap-2 hover:bg-brown-light transition-colors"
           >
@@ -210,9 +180,77 @@ export default function Onboarding() {
     )
   }
 
+  const renderStep = () => {
+    switch (step) {
+      case 'welcome':
+        return <Welcome onNext={() => goTo('photo')} />
+      case 'photo':
+        return (
+          <PhotoCapture
+            onNext={(photo) => {
+              if (photo) setData((d) => ({ ...d, photo }))
+              goTo('inspiration')
+            }}
+            onBack={() => goTo('welcome')}
+            onPhotoSelect={(photo) => setData((d) => ({ ...d, photo }))}
+          />
+        )
+      case 'inspiration':
+        return (
+          <InspirationCapture
+            onNext={handleInspirationNext}
+            onSkip={handleInspirationSkip}
+            onBack={() => goTo('photo')}
+            onInspirationSelect={(inspirationPhoto) => setData((d) => ({ ...d, inspirationPhoto }))}
+          />
+        )
+      case 'shape':
+        return (
+          <ShapeSelector
+            onNext={() => goTo('style')}
+            onBack={() => goTo('inspiration')}
+            selected={data.shape}
+            onSelect={(shape) => setData((d) => ({ ...d, shape }))}
+          />
+        )
+      case 'style':
+        return (
+          <StyleSelector
+            onNext={() => goTo('length')}
+            onBack={() => goTo('shape')}
+            selected={data.style}
+            onSelect={(style) => setData((d) => ({ ...d, style, inspirationPhoto: style !== 'nailart' ? null : d.inspirationPhoto }))}
+            customNote={data.customNote}
+            onCustomNote={(customNote) => setData((d) => ({ ...d, customNote }))}
+            inspirationPhoto={data.inspirationPhoto}
+            onInspirationPhoto={(inspirationPhoto) => setData((d) => ({ ...d, inspirationPhoto }))}
+          />
+        )
+      case 'length':
+        return (
+          <LengthSelector
+            onNext={handleLengthNext}
+            onBack={() => goTo('style')}
+            selected={data.length}
+            onSelect={(length) => setData((d) => ({ ...d, length }))}
+          />
+        )
+      case 'processing':
+        return <Processing duration={7000} />
+      case 'result':
+        return <BlurredResult result={result} onUnlock={handleUnlock} />
+      case 'signup':
+        return <FunnelSignup onSuccess={() => { goTo('pricing'); navigate('/onboarding/pricing') }} />
+      case 'pricing':
+        return <FunnelPricing />
+      default:
+        return <Welcome onNext={() => goTo('photo')} />
+    }
+  }
+
   return (
     <div className="relative">
-      {step > 0 && step < steps.length - 1 && (
+      {showProgress && (
         <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-nude/30">
           <motion.div
             className="h-full bg-gradient-to-r from-nude-dark to-beige-dark"
@@ -230,7 +268,7 @@ export default function Onboarding() {
           exit={{ opacity: 0, x: -30 }}
           transition={{ duration: 0.25 }}
         >
-          {steps[step]}
+          {renderStep()}
         </motion.div>
       </AnimatePresence>
     </div>

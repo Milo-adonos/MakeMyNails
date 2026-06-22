@@ -40,6 +40,20 @@ async function compressToBase64(source, maxPx = 1280, quality = 0.82) {
 
 export async function generateNailVisualization({ photo, shape, style, length, customNote, inspirationPhoto, outfitPhoto }) {
   if (!photo) throw new Error('Aucune photo fournie. Veuillez reprendre depuis le début.')
+
+  if (import.meta.env.VITE_MOCK_GENERATION === 'true') {
+    await new Promise((r) => setTimeout(r, 2500))
+    return {
+      id: crypto.randomUUID(),
+      originalImage: photo,
+      resultImage: '/after-1.webp',
+      shape: shape || 'oval',
+      style: style || 'french',
+      length: length || 'medium',
+      createdAt: new Date().toISOString(),
+    }
+  }
+
   const photoBase64 = await compressToBase64(photo, 1280, 0.82)
 
   let inspirationBase64 = null

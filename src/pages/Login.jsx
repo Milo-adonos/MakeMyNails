@@ -12,6 +12,7 @@ export default function Login() {
   const location = useLocation()
   const handledByForm = useRef(false)
 
+  const redirect = new URLSearchParams(location.search).get('redirect') || '/app'
   const defaultMode = new URLSearchParams(location.search).get('mode') || 'login'
   const [mode, setMode] = useState(defaultMode)
   const [email, setEmail] = useState('')
@@ -23,9 +24,9 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated && !handledByForm.current) {
-      navigate('/app', { replace: true })
+      navigate(redirect, { replace: true })
     }
-  }, [isAuthenticated, navigate])
+  }, [isAuthenticated, navigate, redirect])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -35,10 +36,10 @@ export default function Login() {
       handledByForm.current = true
       if (mode === 'login') {
         await login(email, password)
-        navigate('/app', { replace: true })
+        navigate(redirect, { replace: true })
       } else {
         await signup(email, password, name)
-        navigate('/onboarding', { replace: true })
+        navigate(redirect === '/app' ? '/onboarding' : redirect, { replace: true })
       }
     } catch (err) {
       setError(err.message)
