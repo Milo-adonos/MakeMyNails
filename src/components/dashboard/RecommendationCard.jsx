@@ -5,12 +5,12 @@ import { useTranslation } from 'react-i18next'
 import { useCredits } from '../../contexts/CreditContext'
 
 export default function RecommendationCard({ onClick }) {
-  const { isSubscribed } = useCredits()
+  const { hasEmmaAccess } = useCredits()
   const navigate = useNavigate()
   const { t } = useTranslation()
 
   const handleClick = () => {
-    if (isSubscribed) {
+    if (hasEmmaAccess) {
       onClick()
     } else {
       navigate('/app/purchase')
@@ -38,10 +38,10 @@ export default function RecommendationCard({ onClick }) {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <h3 className="font-heading text-lg font-semibold text-brown">Emma</h3>
-              {!isSubscribed && (
+              {!hasEmmaAccess && (
                 <span className="flex items-center gap-1 text-[10px] font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
                   <Crown className="w-2.5 h-2.5" />
-                  Premium
+                  Exclusif IA
                 </span>
               )}
             </div>
@@ -52,7 +52,7 @@ export default function RecommendationCard({ onClick }) {
           </div>
         </div>
 
-        {isSubscribed ? (
+        {hasEmmaAccess ? (
           <p className="text-sm text-brown-light/70 leading-relaxed mb-4">
             {t('dashboard.recommendations')}
           </p>

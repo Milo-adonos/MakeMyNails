@@ -73,7 +73,7 @@
     "chatUserPicks": "🥂 Party",
     "chatBotResponse": "Perfect ✨ Here are my 3 recommendations to shine tonight:",
     "cta": "Discover Emma →",
-    "ctaNote": "Included in Premium subscription · $14.99/month",
+    "ctaNote": "Included in Exclusif IA subscription · €14.99/month",
     "occasions": {
       "wedding": "Wedding",
       "work": "Work / Office",
@@ -85,16 +85,19 @@
     }
   },
   "pricing": {
-    "title": "How many times do you change your mind before your next appointment?",
-    "subtitle": "Test every style you want, before making up your mind.",
+    "title": "Choose the plan that's right for you",
+    "subtitle": "Unlimited generations, cancel anytime.",
+    "mostPopular": "MOST POPULAR",
     "popular": "Fan favorite ❤️",
+    "subscribe": "Subscribe",
+    "choose": "Get started",
+    "cancelAnytime": "Cancel anytime. No commitment.",
     "features": {
-      "aiVisualizations": "{{count}} AI visualizations",
+      "aiVisualizations": "Unlimited generations",
       "unlimitedShare": "Unlimited sharing",
       "history": "Saved history",
-      "exclusiveStyles": "Exclusive styles"
-    },
-    "choose": "Choose this pack"
+      "exclusiveStyles": "Emma — AI assistant"
+    }
   },
   "testimonials": {
     "title": "They never book an appointment without trying it first",
@@ -246,7 +249,7 @@
     "history": "Your creations",
     "recommendations": "Tell me the occasion and your outfit — I'll take care of the rest ✨",
     "recommendationsSub": "Let Emma choose for you ✨",
-    "recommendationsLocked": "Emma is ready to find your perfect manicure 💅 Unlock her with Premium",
+    "recommendationsLocked": "Emma is ready to find your perfect manicure 💅 Unlock her with Exclusif IA",
     "credits": "credit",
     "credits_plural": "credits",
     "premium": "Premium",
@@ -364,38 +367,16 @@
   },
   "purchasePage": {
     "back": "Back",
-    "title": "Top up your credits",
-    "subtitle": "Choose the offer that suits you",
-    "tabPacks": "Packs",
-    "tabSubscription": "Subscription",
-    "popular": "Popular",
-    "generations": "generations",
-    "perGeneration": "/ generation",
-    "premiumTeaser": "Premium — $14.99/mo",
-    "premiumTeaserDesc": "50 generations + unlimited Emma",
-    "premiumSubtitle": "The complete experience",
-    "perMonth": "/month",
-    "genPerMonth": "50 generations / month",
-    "genPerMonthDetail": "That's $0.30 per generation",
-    "emmaUnlimited": "Unlimited Emma",
-    "emmaUnlimitedDetail": "Unlimited personalized recommendations",
-    "priorityAccess": "Priority access",
-    "priorityAccessDetail": "Faster generations",
-    "comparedTo": "Compared to Regular pack",
-    "packAddict": "Regular Pack",
-    "packAddictPrice": "$9.99 / 15 gen.",
-    "premiumPrice": "$14.99 / 50 gen.",
+    "title": "Choose your subscription",
+    "subtitle": "Unlimited generations, cancel anytime",
     "subscribeCta": "Subscribe now",
     "cancelAnytime": "Cancel anytime. No commitment.",
-    "orBuyPack": "Or buy a single pack",
-    "loginRequired": "Log in to purchase credits",
-    "securePayment": "Secure payment by Stripe",
-    "purchaseError": "Purchase failed. Please try again.",
-    "subscribeError": "Subscription failed. Please try again."
+    "loginRequired": "Log in to subscribe",
+    "securePayment": "Secure payment by Stripe"
   },
   "purchaseSuccess": {
     "title": "Payment confirmed 💅",
-    "subtitle": "Your manicures have been added to your account. You can now try any style you want.",
+    "subtitle": "Your subscription is active. You can now try any style you want.",
     "cta": "Create my first manicure →",
     "redirect": "Redirecting in {{count}}s…"
   },
@@ -407,7 +388,7 @@
     "readyCredits": "You have <strong>{{count}} credit{{plural}}</strong> available.",
     "readyCost": "This visualization will use 1 credit.",
     "noCreditsTitle": "You loved it, right?",
-    "noCreditsDesc": "Keep exploring every style you want. Pick a pack and go again.",
+    "noCreditsDesc": "Keep exploring every style you want. Pick a subscription and go again.",
     "launch": "Start visualization",
     "buyCredits": "Buy credits",
     "back": "Not now"

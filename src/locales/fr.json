@@ -51,7 +51,7 @@
     ]
   },
   "emma": {
-    "badge": "✨ Exclusif Premium",
+    "badge": "✨ Exclusif IA",
     "title": "Et si quelqu'un choisissait",
     "titleItalic": "tes ongles parfaits pour toi ?",
     "subtitle": "Emma est ton assistante style personnelle. Tu lui dis l'occasion, tu lui montres ta tenue et elle te propose les ongles qui font l'effet wow.",
@@ -73,7 +73,7 @@
     "chatUserPicks": "🥂 Soirée",
     "chatBotResponse": "Parfait ✨ Voici mes 3 recommandations pour briller ce soir :",
     "cta": "Découvrir Emma →",
-    "ctaNote": "Inclus dans l'abonnement Premium · 14,99€/mois",
+    "ctaNote": "Inclus dans l'abonnement Exclusif IA · 14,99€/mois",
     "occasions": {
       "wedding": "Mariage",
       "work": "Travail / Bureau",
@@ -85,16 +85,19 @@
     }
   },
   "pricing": {
-    "title": "Combien de fois tu changes d'avis avant ton prochain rendez-vous ?",
-    "subtitle": "Teste tous les styles que tu veux, avant de te décider.",
+    "title": "Choisis l'abonnement qui te correspond",
+    "subtitle": "Générations illimitées, annulable à tout moment.",
+    "mostPopular": "PLUS POPULAIRE",
     "popular": "La favorite ❤️",
+    "subscribe": "S'abonner",
+    "choose": "Commencer",
+    "cancelAnytime": "Annulable à tout moment. Sans engagement.",
     "features": {
-      "aiVisualizations": "{{count}} visualisations IA",
+      "aiVisualizations": "Générations illimitées",
       "unlimitedShare": "Partage illimité",
       "history": "Sauvegarde historique",
-      "exclusiveStyles": "Styles exclusifs"
-    },
-    "choose": "Choisir ce pack"
+      "exclusiveStyles": "Emma — assistante IA"
+    }
   },
   "testimonials": {
     "title": "Elles ne prennent plus de RDV sans l'avoir essayé",
@@ -246,7 +249,7 @@
     "history": "Tes créations",
     "recommendations": "Dis-moi l'occasion et ta tenue — je m'occupe du reste ✨",
     "recommendationsSub": "Laisse Emma choisir pour toi ✨",
-    "recommendationsLocked": "Emma est prête à te trouver la manucure parfaite 💅 Débloque-la avec Premium",
+    "recommendationsLocked": "Emma est prête à te trouver la manucure parfaite 💅 Débloque-la avec Exclusif IA",
     "credits": "crédit",
     "credits_plural": "crédits",
     "premium": "Premium",
@@ -364,38 +367,16 @@
   },
   "purchasePage": {
     "back": "Retour",
-    "title": "Recharge tes crédits",
-    "subtitle": "Choisis l'offre qui te correspond",
-    "tabPacks": "Packs",
-    "tabSubscription": "Abonnement",
-    "popular": "Populaire",
-    "generations": "générations",
-    "perGeneration": "/ génération",
-    "premiumTeaser": "Premium — 14,99€/mois",
-    "premiumTeaserDesc": "50 générations + Emma illimitée",
-    "premiumSubtitle": "L'expérience complète",
-    "perMonth": "/mois",
-    "genPerMonth": "50 générations / mois",
-    "genPerMonthDetail": "Soit 0,30€ par génération",
-    "emmaUnlimited": "Emma illimitée",
-    "emmaUnlimitedDetail": "Recommandations personnalisées sans limite",
-    "priorityAccess": "Accès prioritaire",
-    "priorityAccessDetail": "Générations plus rapides",
-    "comparedTo": "Comparé au pack Regular",
-    "packAddict": "Pack Regular",
-    "packAddictPrice": "9,99€ / 15 gén.",
-    "premiumPrice": "14,99€ / 50 gén.",
+    "title": "Choisis ton abonnement",
+    "subtitle": "Générations illimitées, annulable à tout moment",
     "subscribeCta": "S'abonner maintenant",
     "cancelAnytime": "Annulable à tout moment. Sans engagement.",
-    "orBuyPack": "Ou acheter un pack unique",
-    "loginRequired": "Connecte-toi pour acheter des crédits",
-    "securePayment": "Paiement sécurisé par Stripe",
-    "purchaseError": "Erreur lors de l'achat. Veuillez réessayer.",
-    "subscribeError": "Erreur lors de l'abonnement. Veuillez réessayer."
+    "loginRequired": "Connecte-toi pour t'abonner",
+    "securePayment": "Paiement sécurisé par Stripe"
   },
   "purchaseSuccess": {
     "title": "Paiement confirmé 💅",
-    "subtitle": "Tes manucures ont été ajoutées à ton compte. Tu peux maintenant essayer tous les styles que tu veux.",
+    "subtitle": "Ton abonnement est actif. Tu peux maintenant essayer tous les styles que tu veux.",
     "cta": "Créer ma première manucure →",
     "redirect": "Redirection dans {{count}}s…"
   },
@@ -407,7 +388,7 @@
     "readyCredits": "Vous avez <strong>{{count}} crédit{{plural}}</strong> disponible{{plural}}.",
     "readyCost": "Cette visualisation utilisera 1 crédit.",
     "noCreditsTitle": "Tu as adoré, non ?",
-    "noCreditsDesc": "Continue à explorer tous les styles qui te font envie. Choisis ton pack et relance.",
+    "noCreditsDesc": "Continue à explorer tous les styles qui te font envie. Choisis ton abonnement et relance.",
     "launch": "Lancer la visualisation",
     "buyCredits": "Acheter des crédits",
     "back": "Pas maintenant"

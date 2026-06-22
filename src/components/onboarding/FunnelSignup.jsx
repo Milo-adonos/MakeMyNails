@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Mail, KeyRound } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import GoogleSignInButton from '../auth/GoogleSignInButton'
 
 export default function FunnelSignup({ onSuccess }) {
   const { signup } = useAuth()
@@ -84,6 +85,14 @@ export default function FunnelSignup({ onSuccess }) {
               {loading ? 'Création...' : 'Continuer →'}
             </button>
           </form>
+
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px bg-nude/50" />
+            <span className="text-xs text-brown-light/40">ou</span>
+            <div className="flex-1 h-px bg-nude/50" />
+          </div>
+
+          <GoogleSignInButton />
 
           <Link
             to={`/login?redirect=${encodeURIComponent('/onboarding/pricing')}&mode=login`}

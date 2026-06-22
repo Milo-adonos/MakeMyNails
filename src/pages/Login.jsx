@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
+import GoogleSignInButton from '../components/auth/GoogleSignInButton'
 
 export default function Login() {
   const { t } = useTranslation()
@@ -175,6 +176,14 @@ export default function Login() {
               ) : mode === 'login' ? t('auth.loginCta') : t('auth.signupCta')}
             </button>
           </form>
+
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px bg-nude/50" />
+            <span className="text-xs text-brown-light/40">{t('auth.orWith')}</span>
+            <div className="flex-1 h-px bg-nude/50" />
+          </div>
+
+          <GoogleSignInButton />
 
           {/* Footer note */}
           {mode === 'signup' && (

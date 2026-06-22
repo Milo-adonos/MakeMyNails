@@ -7,11 +7,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const SUBSCRIPTION_IDS = new Set(['sub_premium', 'sub_exclusif_ia'])
+
 const PRICE_MAP: Record<string, string> = {
-  pack_starter:  Deno.env.get('STRIPE_PRICE_DECOUVERTE') ?? '',
-  pack_regular:  Deno.env.get('STRIPE_PRICE_REGULIERE')  ?? '',
-  pack_addict:   Deno.env.get('STRIPE_PRICE_ADDICT')     ?? '',
-  sub_premium:   Deno.env.get('STRIPE_PRICE_PREMIUM')    ?? '',
+  sub_premium:     Deno.env.get('STRIPE_PRICE_PREMIUM')      ?? '',
+  sub_exclusif_ia: Deno.env.get('STRIPE_PRICE_EXCLUSIF_IA')  ?? '',
 }
 
 serve(async (req) => {
@@ -45,8 +45,8 @@ serve(async (req) => {
     const { packId } = await req.json()
     const priceId = PRICE_MAP[packId]
 
-    if (!priceId) {
-      return new Response(JSON.stringify({ error: `Unknown pack: ${packId}` }), {
+    if (!priceId || !SUBSCRIPTION_IDS.has(packId)) {
+      return new Response(JSON.stringify({ error: `Unknown plan: ${packId}` }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -57,19 +57,16 @@ serve(async (req) => {
     })
 
     const appUrl = Deno.env.get('APP_URL') ?? 'https://makemynails.app'
-    const isSubscription = packId === 'sub_premium'
 
     const session = await stripe.checkout.sessions.create({
-      mode: isSubscription ? 'subscription' : 'payment',
+      mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${appUrl}/app/purchase/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/app/purchase`,
       client_reference_id: user.id,
       customer_email: user.email,
       metadata: { packId, userId: user.id },
-      ...(isSubscription && {
-        subscription_data: { metadata: { packId, userId: user.id } },
-      }),
+      subscription_data: { metadata: { packId, userId: user.id } },
     })
 
     return new Response(JSON.stringify({ url: session.url }), {

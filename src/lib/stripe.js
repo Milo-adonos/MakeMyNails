@@ -1,45 +1,41 @@
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const PACKS = [
+export const SUBSCRIPTIONS = [
   {
-    id: 'pack_starter',
-    name: 'Découverte',
-    price: 4.99,
-    credits: 5,
-    pricePerCredit: 1.00,
-    type: 'one_time',
-  },
-  {
-    id: 'pack_regular',
-    name: 'Régulière',
+    id: 'sub_premium',
+    name: 'Premium',
     price: 9.99,
-    credits: 15,
-    pricePerCredit: 0.67,
-    popular: true,
-    type: 'one_time',
+    period: 'mois',
+    popular: false,
+    features: [
+      'Générations illimitées',
+      'Sauvegarde de tes designs',
+      'Upload de tes inspis',
+      'Catalogue complet',
+      'Support prioritaire',
+    ],
   },
   {
-    id: 'pack_addict',
-    name: 'Addict',
-    price: 19.99,
-    credits: 40,
-    pricePerCredit: 0.50,
-    type: 'one_time',
+    id: 'sub_exclusif_ia',
+    name: 'Exclusif IA',
+    price: 14.99,
+    period: 'mois',
+    popular: true,
+    features: [
+      'Tout le plan Premium',
+      'Emma — assistante IA personnelle',
+      'Recommandations par occasion',
+      'Accord tenue & ongles',
+      'Accès prioritaire aux nouveautés',
+    ],
   },
 ]
 
-export const SUBSCRIPTION = {
-  id: 'sub_premium',
-  name: 'Premium',
-  price: 9.99,
-  stripePriceId: 'price_1TlDXnCyclTOEYV4DD3Qrbdt',
-  credits: 50,
-  pricePerCredit: 0.20,
-  period: 'mois',
-}
+/** @deprecated Use SUBSCRIPTIONS */
+export const SUBSCRIPTION = SUBSCRIPTIONS[0]
 
-export async function createCheckoutSession(packId, accessToken) {
+export async function createCheckoutSession(planId, accessToken) {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout-session`, {
     method: 'POST',
     headers: {
@@ -47,7 +43,7 @@ export async function createCheckoutSession(packId, accessToken) {
       'Authorization': `Bearer ${accessToken}`,
       'apikey': SUPABASE_ANON_KEY,
     },
-    body: JSON.stringify({ packId }),
+    body: JSON.stringify({ packId: planId }),
   })
 
   const data = await res.json()

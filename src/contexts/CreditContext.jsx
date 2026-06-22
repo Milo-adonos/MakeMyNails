@@ -16,6 +16,7 @@ export function CreditProvider({ children }) {
 
   const credits = profile?.credits ?? localCredits
   const isSubscribed = subscription?.status === 'active'
+  const hasEmmaAccess = isSubscribed && subscription?.plan === 'exclusif_ia'
 
   const fetchHistory = useCallback(async () => {
     if (!user) return
@@ -185,6 +186,7 @@ export function CreditProvider({ children }) {
       purchases,
       subscription,
       isSubscribed,
+      hasEmmaAccess,
       createVisualization,
       completeVisualization,
       uploadImage,

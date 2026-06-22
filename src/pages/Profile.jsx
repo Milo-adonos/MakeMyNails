@@ -161,7 +161,9 @@ export default function Profile() {
               {purchases.map((p) => (
                 <div key={p.id} className="flex items-center justify-between py-2 border-b border-nude/20 last:border-0">
                   <div>
-                    <p className="text-sm font-medium text-brown">{t('profilePage.pack')} {p.pack_id === 'pack_starter' ? 'Découverte' : p.pack_id === 'pack_regular' ? 'Régulière' : p.pack_id === 'pack_addict' ? 'Addict' : 'Premium'}</p>
+                    <p className="text-sm font-medium text-brown">
+                      {p.pack_id === 'sub_premium' ? 'Premium' : p.pack_id === 'sub_exclusif_ia' ? 'Exclusif IA' : p.pack_id}
+                    </p>
                     <p className="text-xs text-brown-light/50">
                       {new Date(p.created_at).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>
