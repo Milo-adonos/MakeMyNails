@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { normalizeLocale } from '../lib/locale'
 import Hero from '../components/landing/Hero'
 import Footer from '../components/layout/Footer'
 
@@ -11,7 +12,7 @@ const Testimonials = lazy(() => import('../components/landing/Testimonials'))
 
 function LanguageSwitcher() {
   const { i18n } = useTranslation()
-  const current = i18n.language?.startsWith('en') ? 'en' : 'fr'
+  const current = normalizeLocale(i18n.language)
 
   return (
     <div className="flex items-center gap-1 bg-nude/30 rounded-xl p-1">

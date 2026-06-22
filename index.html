@@ -99,6 +99,40 @@
       .shell-visual img { width: 100%; height: 100%; object-fit: cover; display: block; }
     </style>
     <title>MakeMyNails — Visualisez vos ongles parfaits</title>
+    <script>
+      (function () {
+        var STORAGE_KEY = 'i18nextLng';
+        function normalize(lng) {
+          var code = String(lng || '').toLowerCase();
+          if (code.indexOf('en') === 0) return 'en';
+          if (code.indexOf('fr') === 0) return 'fr';
+          return 'fr';
+        }
+        function detect() {
+          try {
+            var stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) return normalize(stored);
+          } catch (e) {}
+          var list = (navigator.languages && navigator.languages.length)
+            ? navigator.languages
+            : [navigator.language || 'fr'];
+          for (var i = 0; i < list.length; i++) {
+            var code = String(list[i]).toLowerCase();
+            if (code.indexOf('en') === 0) return 'en';
+            if (code.indexOf('fr') === 0) return 'fr';
+          }
+          return 'fr';
+        }
+        var lang = detect();
+        document.documentElement.lang = lang;
+        var titles = {
+          fr: 'MakeMyNails — Visualisez vos ongles parfaits',
+          en: 'MakeMyNails — Visualize your perfect nails',
+        };
+        document.title = titles[lang] || titles.fr;
+        window.__MMN_LANG__ = lang;
+      })();
+    </script>
   </head>
   <body>
     <div id="root">
@@ -109,20 +143,20 @@
               <img src="/logo.webp" alt="" width="32" height="32" />
               <span>MakeMyNails</span>
             </a>
-            <a class="shell-login" href="/login">Connexion</a>
+            <a class="shell-login" id="shell-login" href="/login">Connexion</a>
           </div>
         </header>
         <section class="shell-hero">
           <div class="shell-hero-inner">
             <div>
-              <div class="shell-badge">💅 Tes ongles parfaits, enfin.</div>
-              <h1 class="shell-title">
+              <div class="shell-badge" id="shell-badge">💅 Tes ongles parfaits, enfin.</div>
+              <h1 class="shell-title" id="shell-title">
                 Tombe amoureuse <em>de tes ongles</em> avant même de les avoir.
               </h1>
-              <p class="shell-subtitle">
+              <p class="shell-subtitle" id="shell-subtitle">
                 Prends une photo de tes mains, choisis ton style et vois le résultat en quelques secondes. Sur tes vraies mains.
               </p>
-              <a class="shell-cta" href="/onboarding">Essayer sur mes mains →</a>
+              <a class="shell-cta" id="shell-cta" href="/onboarding">Essayer sur mes mains →</a>
             </div>
             <div class="shell-visual" aria-hidden="true">
               <img src="/before.webp" alt="" width="400" height="400" fetchpriority="high" />
@@ -132,6 +166,33 @@
         </section>
       </div>
     </div>
+    <script>
+      (function () {
+        var lang = window.__MMN_LANG__ || 'fr';
+        if (lang === 'fr') return;
+        var copy = {
+          en: {
+            login: 'Log in',
+            badge: '💅 Your perfect nails, finally.',
+            title: 'Fall in love <em>with your nails</em> before you even have them.',
+            subtitle: 'Take a photo of your hands, choose your style and see the result in seconds. On your real hands.',
+            cta: 'Try on my hands →',
+          },
+        };
+        var t = copy[lang];
+        if (!t) return;
+        var login = document.getElementById('shell-login');
+        var badge = document.getElementById('shell-badge');
+        var title = document.getElementById('shell-title');
+        var subtitle = document.getElementById('shell-subtitle');
+        var cta = document.getElementById('shell-cta');
+        if (login) login.textContent = t.login;
+        if (badge) badge.textContent = t.badge;
+        if (title) title.innerHTML = t.title;
+        if (subtitle) subtitle.textContent = t.subtitle;
+        if (cta) cta.textContent = t.cta;
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
