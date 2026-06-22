@@ -18,6 +18,21 @@ import { useCredits } from '../contexts/CreditContext'
 
 const INSPO_DEFAULTS = { shape: 'oval', style: 'nailart', length: 'medium' }
 
+function buildGenPayload(data, overrides = {}) {
+  const hasInspo = !!data.inspirationPhoto
+  return {
+    photo: data.photo,
+    mode: hasInspo ? 'inspiration' : 'onboarding',
+    shape: data.shape,
+    style: data.style,
+    length: data.length,
+    customNote: data.customNote,
+    inspirationPhoto: data.inspirationPhoto,
+    outfitPhoto: data.outfitPhoto,
+    ...overrides,
+  }
+}
+
 export default function Onboarding() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -98,11 +113,8 @@ export default function Onboarding() {
 
     let cancelled = false
 
-    Promise.all([
-      new Promise((r) => setTimeout(r, 7000)),
-      generationRef.current,
-    ])
-      .then(([, res]) => {
+    generationRef.current
+      .then((res) => {
         if (!cancelled && res) goTo('result')
       })
       .catch(() => {
@@ -115,14 +127,12 @@ export default function Onboarding() {
   const handleInspirationNext = (inspirationUrl) => {
     if (inspirationUrl) {
       setSkipStyleSteps(true)
-      const genData = {
+      const genData = buildGenPayload({
         ...data,
         inspirationPhoto: inspirationUrl,
-        shape: INSPO_DEFAULTS.shape,
-        style: INSPO_DEFAULTS.style,
-        length: INSPO_DEFAULTS.length,
-      }
-      setData((d) => ({ ...d, ...genData }))
+        ...INSPO_DEFAULTS,
+      })
+      setData((d) => ({ ...d, inspirationPhoto: inspirationUrl, ...INSPO_DEFAULTS }))
       enterProcessing(genData)
     }
   }
@@ -133,7 +143,7 @@ export default function Onboarding() {
   }
 
   const handleLengthNext = (length) => {
-    const genData = { ...data, length: length || data.length }
+    const genData = buildGenPayload({ ...data, length: length || data.length })
     if (!genData.shape || !genData.style || !genData.length) return
     enterProcessing(genData)
   }
@@ -236,7 +246,7 @@ export default function Onboarding() {
           />
         )
       case 'processing':
-        return <Processing duration={7000} />
+        return <Processing />
       case 'result':
         return <BlurredResult result={result} onUnlock={handleUnlock} />
       case 'signup':

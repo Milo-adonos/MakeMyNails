@@ -264,9 +264,10 @@
       "outfitSkipped": "Sans photo de tenue",
       "occasionQuestion_outfit": "J'adore ta tenue ! 🔥 C'est pour quelle occasion ?",
       "occasionQuestion_no_outfit": "Pas de problème ! C'est pour quelle occasion ?",
-      "resultsIntro": "Parfait ! Voici mes recommandations pour {{occasion}}{{outfitSuffix}} ✨",
-      "resultsSuffix_outfit": ", accordées à ta tenue",
-      "restart": "Recommencer"
+    "resultsIntro": "Parfait ! Voici mes recommandations pour {{occasion}}{{outfitSuffix}} ✨",
+    "resultsSuffix_outfit": ", accordées à ta tenue",
+    "generateCta": "Générer mes ongles pour {{occasion}} ✨",
+    "restart": "Recommencer"
     }
   },
   "purchase": {

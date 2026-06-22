@@ -69,7 +69,10 @@ export default function NewVisualizationFlow({ open, onClose }) {
       })
       const vizId = vizResult?.visualization_id
 
-      const result = await generateNailVisualization(data)
+      const payload = data.inspirationPhoto
+        ? { ...data, mode: 'inspiration' }
+        : { ...data, mode: 'onboarding' }
+      const result = await generateNailVisualization(payload)
 
       if (vizId && result.resultImage) {
         await completeVisualization(vizId, result.resultImage)

@@ -4,29 +4,18 @@ import { motion, AnimatePresence } from 'framer-motion'
 const DEFAULT_MESSAGES = [
   'Analyse de ta main...',
   'Création de ton design...',
-  'Finalisation...',
+  'Finalisation avec l\'IA...',
 ]
 
-export default function Processing({ duration = 7000, messages = DEFAULT_MESSAGES }) {
+export default function Processing({ messages = DEFAULT_MESSAGES }) {
   const [messageIndex, setMessageIndex] = useState(0)
-  const [progress, setProgress] = useState(0)
 
   useEffect(() => {
-    const start = Date.now()
     const messageInterval = setInterval(() => {
       setMessageIndex((prev) => (prev + 1) % messages.length)
-    }, 2000)
-
-    const progressInterval = setInterval(() => {
-      const elapsed = Date.now() - start
-      setProgress(Math.min(100, (elapsed / duration) * 100))
-    }, 50)
-
-    return () => {
-      clearInterval(messageInterval)
-      clearInterval(progressInterval)
-    }
-  }, [duration, messages])
+    }, 2500)
+    return () => clearInterval(messageInterval)
+  }, [messages])
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-gradient-to-b from-offwhite to-nude-light/30">
@@ -54,10 +43,14 @@ export default function Processing({ duration = 7000, messages = DEFAULT_MESSAGE
       <div className="w-full max-w-xs">
         <div className="h-1 bg-nude/40 rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-nude-dark to-beige-dark rounded-full"
-            style={{ width: `${progress}%` }}
+            className="h-full w-1/3 bg-gradient-to-r from-nude-dark to-beige-dark rounded-full"
+            animate={{ x: ['-100%', '300%'] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
           />
         </div>
+        <p className="text-center text-xs text-brown-light/50 mt-4">
+          Génération en cours — ça peut prendre jusqu&apos;à une minute
+        </p>
       </div>
     </div>
   )

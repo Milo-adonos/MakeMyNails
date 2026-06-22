@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Camera, Upload, Sparkles, ChevronRight, Shirt } from 'lucide-react'
+import { X, Camera, Upload, Sparkles, ChevronRight, Shirt, Wand2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { generateNailVisualization } from '../../lib/api'
+import { useCredits } from '../../contexts/CreditContext'
+import Processing from '../onboarding/Processing'
 
 const occasionKeys = ['wedding', 'work', 'party', 'vacation', 'date', 'everyday', 'other']
 const occasionIcons = {
@@ -101,12 +104,15 @@ function UserMessage({ children }) {
 export default function RecommendationChat({ open, onClose, onSelect: externalOnSelect }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const { canGenerate, createVisualization, completeVisualization, uploadBlobUrl } = useCredits()
   const [step, setStep] = useState('welcome')
   const [photo, setPhoto] = useState(null)
   const [outfitPhoto, setOutfitPhoto] = useState(null)
   const [outfitSkipped, setOutfitSkipped] = useState(false)
   const [occasion, setOccasion] = useState(null)
   const [recos, setRecos] = useState([])
+  const [generating, setGenerating] = useState(false)
+  const [generationError, setGenerationError] = useState(null)
   const chatEndRef = useRef(null)
   const fileRef = useRef(null)
   const cameraRef = useRef(null)
@@ -150,6 +156,48 @@ export default function RecommendationChat({ open, onClose, onSelect: externalOn
     setTimeout(() => setStep('results'), 600)
   }
 
+  const handleEmmaGenerate = async () => {
+    if (!photo || !occasion) return
+    if (!canGenerate()) {
+      onClose()
+      navigate('/app/purchase')
+      return
+    }
+
+    setGenerating(true)
+    setGenerationError(null)
+
+    try {
+      let vizId = null
+      const originalImageUrl = await uploadBlobUrl(photo)
+      const vizResult = await createVisualization({
+        shape: 'oval',
+        style: 'nailart',
+        length: 'medium',
+        originalImageUrl,
+      })
+      vizId = vizResult?.visualization_id
+
+      const result = await generateNailVisualization({
+        photo,
+        mode: 'emma',
+        occasion,
+        occasionLabel: t(`emma.occasions.${occasion}`),
+        outfitPhoto,
+      })
+
+      if (vizId && result.resultImage) {
+        await completeVisualization(vizId, result.resultImage)
+      }
+
+      onClose()
+      navigate('/result', { state: { result, locked: false } })
+    } catch (err) {
+      setGenerationError(err.message || t('common.error'))
+      setGenerating(false)
+    }
+  }
+
   const handleSelectReco = (reco) => {
     onClose()
     if (externalOnSelect) {
@@ -174,9 +222,29 @@ export default function RecommendationChat({ open, onClose, onSelect: externalOn
     setOutfitSkipped(false)
     setOccasion(null)
     setRecos([])
+    setGenerating(false)
+    setGenerationError(null)
   }
 
   if (!open) return null
+
+  if (generating) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[60] bg-offwhite"
+      >
+        <Processing messages={[
+          'Emma analyse ton occasion...',
+          'Création de ton design sur mesure...',
+          'Presque prêt...',
+        ]}
+        />
+      </motion.div>
+    )
+  }
 
   const occasionLabel = occasion ? t(`emma.occasions.${occasion}`) : ''
 
@@ -297,6 +365,18 @@ export default function RecommendationChat({ open, onClose, onSelect: externalOn
                 })}
                 delay={400}
               />
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="pl-10">
+                <button
+                  onClick={handleEmmaGenerate}
+                  className="w-full flex items-center justify-center gap-2 bg-brown text-offwhite px-5 py-3.5 rounded-2xl text-sm font-semibold hover:bg-brown-light transition-colors mb-4"
+                >
+                  <Wand2 className="w-4 h-4" />
+                  {t('dashboard.emmaChat.generateCta', { occasion: occasionLabel })}
+                </button>
+                {generationError && (
+                  <p className="text-xs text-red-500 text-center mb-3">{generationError}</p>
+                )}
+              </motion.div>
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.2 }} className="pl-10 space-y-2.5">
                 {recos.map((reco, i) => (
                   <motion.button

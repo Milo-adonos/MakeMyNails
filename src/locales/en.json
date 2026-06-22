@@ -264,9 +264,10 @@
       "outfitSkipped": "No outfit photo",
       "occasionQuestion_outfit": "Love your outfit! 🔥 What's the occasion?",
       "occasionQuestion_no_outfit": "No problem! What's the occasion?",
-      "resultsIntro": "Perfect! Here are my recommendations for {{occasion}}{{outfitSuffix}} ✨",
-      "resultsSuffix_outfit": ", matched to your outfit",
-      "restart": "Start over"
+    "resultsIntro": "Perfect! Here are my recommendations for {{occasion}}{{outfitSuffix}} ✨",
+    "resultsSuffix_outfit": ", matched to your outfit",
+    "generateCta": "Generate my nails for {{occasion}} ✨",
+    "restart": "Start over"
     }
   },
   "purchase": {

@@ -1,33 +1,48 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { optimizeImageUrl } from '../../lib/supabase'
 
 export default function BlurredResult({ result, onUnlock }) {
   const resultImg = result?.result_image_url || result?.resultImage
   const originalImg = optimizeImageUrl(result?.original_image_url || result?.originalImage)
+  const [imageLoaded, setImageLoaded] = useState(false)
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-offwhite to-nude-light/30 px-4 py-8 flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center max-w-md mx-auto w-full">
-        <div className="relative w-full rounded-3xl overflow-hidden shadow-xl aspect-[3/4] mb-8">
+        <div className="relative w-full rounded-3xl overflow-hidden shadow-xl aspect-[3/4] mb-8 bg-nude/20">
           {resultImg ? (
-            <img
-              src={resultImg}
-              alt="Résultat"
-              className="w-full h-full object-cover"
-              style={{ filter: 'blur(12px)', transform: 'scale(1.08)' }}
-            />
+            <>
+              <img
+                src={resultImg}
+                alt="Résultat"
+                className="w-full h-full object-cover"
+                onLoad={() => setImageLoaded(true)}
+              />
+              {imageLoaded && (
+                <div
+                  className="absolute inset-0 backdrop-blur-xl bg-offwhite/25"
+                  aria-hidden="true"
+                />
+              )}
+            </>
           ) : originalImg ? (
-            <img
-              src={originalImg}
-              alt="Aperçu"
-              className="w-full h-full object-cover"
-              style={{ filter: 'blur(12px)', transform: 'scale(1.08)' }}
-            />
+            <>
+              <img
+                src={originalImg}
+                alt="Aperçu"
+                className="w-full h-full object-cover"
+                onLoad={() => setImageLoaded(true)}
+              />
+              {imageLoaded && (
+                <div className="absolute inset-0 backdrop-blur-xl bg-offwhite/25" aria-hidden="true" />
+              )}
+            </>
           ) : (
-            <div className="w-full h-full bg-nude/30" />
+            <div className="w-full h-full bg-nude/30 animate-pulse" />
           )}
 
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-brown/20 backdrop-blur-[1px] px-6 text-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
