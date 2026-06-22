@@ -36,32 +36,22 @@ export default function Hero() {
       setCurrent((c) => (c + 1) % examples.length)
     }, 3500)
     return () => clearInterval(timer)
-  }, [])
+  }, [examples.length])
 
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden">
+    <section className="relative min-h-svh pt-20 pb-16 flex flex-col justify-center overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 right-10 w-72 h-72 bg-nude/40 rounded-full blur-3xl" />
         <div className="absolute bottom-20 left-10 w-96 h-96 bg-beige/30 rounded-full blur-3xl" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-nude-light/50 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative max-w-6xl mx-auto px-4 py-24 md:py-32">
+      <div className="relative max-w-6xl mx-auto px-4 w-full">
         <div className="grid md:grid-cols-2 gap-12 items-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center md:text-left"
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 bg-nude/50 px-4 py-2 rounded-full mb-6"
-            >
+          <div className="text-center md:text-left">
+            <div className="inline-flex items-center gap-2 bg-nude/50 px-4 py-2 rounded-full mb-6">
               <span className="text-sm font-medium text-brown-light">{t('hero.badge')}</span>
-            </motion.div>
+            </div>
 
             <h1 className="font-heading text-5xl md:text-6xl lg:text-7xl font-bold text-brown leading-[1.1] mb-6">
               {t('hero.title')}{' '}
@@ -81,14 +71,9 @@ export default function Hero() {
                 </Button>
               </Link>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="relative"
-          >
+          <div className="relative">
             <div className="relative aspect-square max-w-md mx-auto">
               <div className="absolute inset-0 rounded-[2rem] overflow-hidden">
                 <div className="grid grid-cols-2 h-full gap-1">
@@ -96,18 +81,18 @@ export default function Hero() {
                     <img src="/before.webp" alt={t('hero.before')} className="w-full h-full object-cover" />
                     <span className="absolute bottom-3 left-0 right-0 text-center text-xs font-medium text-white/80 uppercase tracking-wider drop-shadow">{t('hero.before')}</span>
                   </div>
-                  <div className="relative overflow-hidden">
-                    <AnimatePresence>
+                  <div className="relative overflow-hidden bg-nude/20">
+                    <AnimatePresence mode="sync">
                       <motion.img
                         key={current}
                         src={examples[current].after}
                         alt={t('hero.after')}
                         className="absolute inset-0 w-full h-full object-cover"
-                        initial={{ opacity: 0 }}
+                        initial={{ opacity: current === 0 ? 1 : 0 }}
                         animate={{ opacity: 1, scale: 1.05 }}
                         exit={{ opacity: 0 }}
                         transition={{
-                          opacity: { duration: 0.8, ease: 'easeInOut' },
+                          opacity: { duration: 0.6, ease: 'easeInOut' },
                           scale: { duration: 3.5, ease: 'linear' },
                         }}
                       />
@@ -116,10 +101,8 @@ export default function Hero() {
                   </div>
                 </div>
               </div>
-
-
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

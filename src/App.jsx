@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/layout/Navbar'
+import ScrollToTop from './components/layout/ScrollToTop'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Onboarding from './pages/Onboarding'
@@ -22,6 +23,7 @@ function ProtectedRoute({ children }) {
 export default function App() {
   return (
     <div className="min-h-screen bg-offwhite">
+      <ScrollToTop />
       <Navbar />
       <Routes>
         <Route path="/" element={<Landing />} />

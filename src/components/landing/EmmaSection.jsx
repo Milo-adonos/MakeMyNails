@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Sparkles, CalendarHeart, Shirt, Crown, ArrowRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { LANDING_VIEWPORT } from '../../lib/motion'
 
 const featureIcons = [CalendarHeart, Shirt, Sparkles]
 const featureColors = ['bg-nude/30', 'bg-beige/30', 'bg-nude-light/50']
@@ -22,14 +23,14 @@ export default function EmmaSection() {
   const occasionKeys = ['wedding', 'party', 'work', 'vacation', 'date', 'everyday']
 
   return (
-    <section id="emma" className="py-24 px-4 bg-gradient-to-b from-nude-light/20 to-offwhite overflow-hidden">
+    <section id="emma" className="py-24 px-4 bg-gradient-to-b from-nude-light/20 to-offwhite overflow-hidden scroll-mt-20">
       <div className="max-w-6xl mx-auto">
 
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={LANDING_VIEWPORT}
           className="text-center mb-16"
         >
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-nude/60 to-beige/60 border border-nude-dark/20 px-4 py-2 rounded-full mb-6">
@@ -54,7 +55,7 @@ export default function EmmaSection() {
                 key={i}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                viewport={LANDING_VIEWPORT}
                 transition={{ delay: i * 0.12 }}
                 className="bg-white rounded-3xl p-7 shadow-sm shadow-brown/5"
               >
@@ -72,7 +73,7 @@ export default function EmmaSection() {
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={LANDING_VIEWPORT}
           transition={{ delay: 0.1 }}
           className="bg-white rounded-3xl shadow-sm shadow-brown/5 overflow-hidden max-w-md mx-auto mb-16"
         >
@@ -141,7 +142,7 @@ export default function EmmaSection() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={LANDING_VIEWPORT}
           className="text-center"
         >
           <Link

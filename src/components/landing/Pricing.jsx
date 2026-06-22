@@ -1,17 +1,18 @@
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { LANDING_VIEWPORT } from '../../lib/motion'
 import SubscriptionPlans from '../pricing/SubscriptionPlans'
 
 export default function Pricing() {
   const { t } = useTranslation()
 
   return (
-    <section id="pricing" className="py-24 px-4 bg-gradient-to-b from-transparent to-nude/10">
+    <section id="pricing" className="py-24 px-4 bg-gradient-to-b from-transparent to-nude/10 scroll-mt-20">
       <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={LANDING_VIEWPORT}
           className="text-center mb-16"
         >
           <h2 className="font-heading text-4xl md:text-5xl font-bold text-brown mb-4">

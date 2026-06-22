@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { Star } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { LANDING_VIEWPORT } from '../../lib/motion'
 
 const ratings = [5, 5, 5, 4]
 const avatars = ['/profile-1.webp', '/profile-2.webp', '/profile-3.webp', '/profile-4.webp']
@@ -10,12 +11,12 @@ export default function Testimonials() {
   const items = t('testimonials.items', { returnObjects: true })
 
   return (
-    <section id="testimonials" className="py-24 px-4">
+    <section id="testimonials" className="py-24 px-4 scroll-mt-20">
       <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={LANDING_VIEWPORT}
           className="text-center mb-16"
         >
           <h2 className="font-heading text-4xl md:text-5xl font-bold text-brown mb-4">
@@ -32,7 +33,7 @@ export default function Testimonials() {
               key={i}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              viewport={LANDING_VIEWPORT}
               transition={{ delay: i * 0.1 }}
               className="bg-white rounded-3xl p-6 shadow-sm shadow-brown/5"
             >

@@ -2,6 +2,8 @@ import { motion } from 'framer-motion'
 import { Camera, Palette, Wand2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { LANDING_VIEWPORT } from '../../lib/motion'
+
 const icons = [Camera, Palette, Wand2]
 const colors = ['bg-nude/30', 'bg-beige/30', 'bg-nude-light/50']
 const iconColors = ['text-nude-dark', 'text-beige-dark', 'text-brown-medium']
@@ -11,12 +13,12 @@ export default function Steps() {
   const steps = t('steps.items', { returnObjects: true })
 
   return (
-    <section id="steps" className="py-24 px-4">
+    <section id="steps" className="py-24 px-4 scroll-mt-20">
       <div className="max-w-6xl mx-auto">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={LANDING_VIEWPORT}
           className="text-center mb-16"
         >
           <h2 className="font-heading text-4xl md:text-5xl font-bold text-brown mb-4">
@@ -33,10 +35,10 @@ export default function Steps() {
             return (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.15 }}
+                viewport={LANDING_VIEWPORT}
+                transition={{ delay: i * 0.1 }}
                 className="relative"
               >
                 <div className="bg-white rounded-3xl p-8 shadow-sm shadow-brown/5 h-full">

@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { SUBSCRIPTIONS } from '../../lib/stripe'
 import Button from '../common/Button'
 
+import { LANDING_VIEWPORT } from '../../lib/motion'
+
 function formatPrice(price) {
   return price.toFixed(2).replace('.', ',') + '€'
 }
@@ -115,9 +117,9 @@ export default function SubscriptionPlans({
         return (
           <motion.div
             key={plan.id}
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={LANDING_VIEWPORT}
             transition={{ delay: i * 0.1 }}
             className="relative"
           >
