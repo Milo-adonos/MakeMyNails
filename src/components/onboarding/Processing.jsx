@@ -49,7 +49,7 @@ export default function Processing({ messages = DEFAULT_MESSAGES }) {
           />
         </div>
         <p className="text-center text-xs text-brown-light/50 mt-4">
-          Génération en cours — ça peut prendre jusqu&apos;à une minute
+          Génération en cours — environ 15 à 30 secondes
         </p>
       </div>
     </div>

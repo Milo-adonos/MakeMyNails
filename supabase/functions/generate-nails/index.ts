@@ -1,8 +1,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const KIE_AI_API = 'https://api.kie.ai'
-const KIE_AI_MODEL = 'nano-banana-2'
+const FAL_MODEL = 'fal-ai/nano-banana-2/edit'
+const FAL_QUEUE = `https://queue.fal.run/${FAL_MODEL}`
+const FAL_RUN = `https://fal.run/${FAL_MODEL}`
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -68,68 +68,85 @@ function buildPrompt(
   return buildOnboardingPrompt(shape, style)
 }
 
-function parseBase64Image(dataUrl: string): { bytes: Uint8Array; mime: string; ext: string } {
-  const match = dataUrl.match(/^data:(image\/[\w+.-]+);base64,(.+)$/)
-  const mime = match?.[1] ?? 'image/jpeg'
-  const raw = match?.[2] ?? dataUrl.split(',')[1] ?? dataUrl
-  const bytes = Uint8Array.from(atob(raw), (c) => c.charCodeAt(0))
-  const ext = mime.includes('png') ? 'png' : mime.includes('webp') ? 'webp' : 'jpg'
-  return { bytes, mime, ext }
+function toDataUri(base64: string): string {
+  if (base64.startsWith('data:')) return base64
+  return `data:image/jpeg;base64,${base64}`
 }
 
-async function submitGeneration(
+function extractResultUrl(json: { images?: Array<{ url?: string }> }): string {
+  const url = json.images?.[0]?.url
+  if (!url) throw new Error('No result image URL')
+  return url
+}
+
+async function generateWithFal(
   apiKey: string,
   imageUrls: string[],
   prompt: string,
   aspectRatio: string,
 ): Promise<string> {
-  const res = await fetch(`${KIE_AI_API}/api/v1/jobs/createTask`, {
+  const input = {
+    prompt,
+    image_urls: imageUrls,
+    aspect_ratio: aspectRatio || 'auto',
+    resolution: '2K',
+    output_format: 'png',
+    limit_generations: true,
+    num_images: 1,
+  }
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Key ${apiKey}`,
+  }
+
+  const directRes = await fetch(FAL_RUN, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: KIE_AI_MODEL,
-      input: {
-        prompt,
-        image_input: imageUrls,
-        aspect_ratio: aspectRatio || 'auto',
-        resolution: '2K',
-        output_format: 'png',
-      },
-    }),
+    headers,
+    body: JSON.stringify(input),
   })
 
-  const json = await res.json()
-  if (json.code !== 200) throw new Error(json.msg || json.message || 'Generation failed')
-  return json.data.taskId
-}
+  if (directRes.ok) {
+    return extractResultUrl(await directRes.json())
+  }
 
-async function pollTaskResult(apiKey: string, taskId: string): Promise<string> {
-  for (let i = 0; i < 90; i++) {
-    await new Promise((r) => setTimeout(r, 2000))
+  const queueRes = await fetch(FAL_QUEUE, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(input),
+  })
 
-    const res = await fetch(
-      `${KIE_AI_API}/api/v1/jobs/recordInfo?taskId=${taskId}`,
-      { headers: { 'Authorization': `Bearer ${apiKey}` } },
+  const queueJson = await queueRes.json()
+  if (!queueRes.ok) {
+    throw new Error(queueJson.detail || queueJson.error || 'Fal generation failed')
+  }
+
+  const requestId = queueJson.request_id
+  if (!requestId) throw new Error('Fal did not return a request_id')
+
+  for (let i = 0; i < 60; i++) {
+    await new Promise((r) => setTimeout(r, 1000))
+
+    const statusRes = await fetch(
+      `${FAL_QUEUE}/requests/${requestId}/status`,
+      { headers: { 'Authorization': `Key ${apiKey}` } },
     )
+    const statusJson = await statusRes.json()
 
-    const json = await res.json()
-    if (json.code !== 200) continue
-
-    const { state, resultJson, failMsg } = json.data
-
-    if (state === 'success') {
-      const result = JSON.parse(resultJson)
-      const url = result.resultUrls?.[0]
-      if (!url) throw new Error('No result image URL')
-      return url
+    if (statusJson.status === 'COMPLETED') {
+      const resultRes = await fetch(
+        `${FAL_QUEUE}/requests/${requestId}`,
+        { headers: { 'Authorization': `Key ${apiKey}` } },
+      )
+      if (!resultRes.ok) throw new Error('Failed to fetch Fal result')
+      return extractResultUrl(await resultRes.json())
     }
-    if (state === 'fail') {
-      throw new Error(failMsg || 'Generation failed')
+
+    if (statusJson.status === 'FAILED') {
+      throw new Error(statusJson.error || 'Generation failed')
     }
   }
+
   throw new Error('Generation timed out')
 }
 
@@ -139,8 +156,8 @@ serve(async (req) => {
   }
 
   try {
-    const kieAiKey = Deno.env.get('KIE_AI_API_KEY')
-    if (!kieAiKey) throw new Error('KIE_AI_API_KEY not configured')
+    const falKey = Deno.env.get('FAL_KEY')
+    if (!falKey) throw new Error('FAL_KEY not configured')
 
     const body = await req.json()
     const {
@@ -195,38 +212,21 @@ serve(async (req) => {
       })
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
-
-    const uploadImage = async (b64: string, prefix: string): Promise<string> => {
-      const { bytes, mime, ext } = parseBase64Image(b64)
-      const filename = `temp/${prefix}-${crypto.randomUUID()}.${ext}`
-      const { error } = await supabase.storage
-        .from('nail-images')
-        .upload(filename, bytes, { contentType: mime, upsert: true })
-      if (error) throw new Error(`Upload failed: ${error.message}`)
-      const { data } = supabase.storage.from('nail-images').getPublicUrl(filename)
-      return data.publicUrl
-    }
-
-    const photoUrl = await uploadImage(photoBase64, 'hand')
-    const imageUrls = [photoUrl]
+    const imageUrls = [toDataUri(photoBase64)]
 
     if (mode === 'inspiration' && inspirationBase64) {
-      imageUrls.push(await uploadImage(inspirationBase64, 'inspo'))
+      imageUrls.push(toDataUri(inspirationBase64))
     }
 
     if (outfitBase64) {
-      imageUrls.push(await uploadImage(outfitBase64, 'outfit'))
+      imageUrls.push(toDataUri(outfitBase64))
     }
 
     const prompt = buildPrompt(mode, shape, style, occasion, occasionLabel)
-    const taskId = await submitGeneration(kieAiKey, imageUrls, prompt, aspectRatio)
-    const resultImageUrl = await pollTaskResult(kieAiKey, taskId)
+    const resultImageUrl = await generateWithFal(falKey, imageUrls, prompt, aspectRatio)
 
     return new Response(
-      JSON.stringify({ resultImageUrl, taskId, mode }),
+      JSON.stringify({ resultImageUrl, mode }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   } catch (err) {
