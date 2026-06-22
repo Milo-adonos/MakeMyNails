@@ -3,9 +3,10 @@ import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCredits } from '../../contexts/CreditContext'
+import { setSelectedPlan } from '../../lib/funnelSession'
 import SubscriptionPlans from '../pricing/SubscriptionPlans'
 
-export default function FunnelPricing() {
+export default function FunnelPricing({ onGoSignup }) {
   const [designCount, setDesignCount] = useState(1247)
   const [loading, setLoading] = useState(null)
   const navigate = useNavigate()
@@ -20,10 +21,17 @@ export default function FunnelPricing() {
   }, [])
 
   const handleSelect = async (planId) => {
+    setSelectedPlan(planId)
+
     if (!isAuthenticated) {
-      navigate('/login?redirect=/onboarding/pricing')
+      if (onGoSignup) {
+        onGoSignup()
+      } else {
+        navigate('/onboarding/signup')
+      }
       return
     }
+
     setLoading(planId)
     try {
       await addCredits(planId)
@@ -36,7 +44,7 @@ export default function FunnelPricing() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-offwhite to-nude-light/30 px-4 py-12">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -54,7 +62,7 @@ export default function FunnelPricing() {
           variant="funnel"
           loading={loading}
           onSelect={handleSelect}
-          ctaLabel="Débloquer mes designs →"
+          ctaLabel="Choisir ce plan →"
         />
 
         <motion.div

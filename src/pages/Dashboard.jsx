@@ -1,80 +1,83 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Lock } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
 import CreditCounter from '../components/dashboard/CreditCounter'
 import UploadZone from '../components/dashboard/UploadZone'
 import RecommendationCard from '../components/dashboard/RecommendationCard'
 import RecommendationChat from '../components/dashboard/RecommendationChat'
 import NewVisualizationFlow from '../components/dashboard/NewVisualizationFlow'
 import HistoryList from '../components/dashboard/HistoryList'
-import SubscriptionPlans from '../components/pricing/SubscriptionPlans'
 import { useCredits } from '../contexts/CreditContext'
+import { getFunnelResult, clearFunnelResult, clearSelectedPlan, clearPendingCheckout } from '../lib/funnelSession'
 
-function NoCreditsConversion({ onDismiss }) {
-  const { t } = useTranslation()
-  const { addCredits } = useCredits()
-  const [loading, setLoading] = useState(null)
-
-  const handleSubscribe = async (planId) => {
-    setLoading(planId)
-    try { await addCredits(planId) } catch { setLoading(null) }
-  }
+function UnlockedDesignCard({ result, onView }) {
+  const resultImg = result?.result_image_url || result?.resultImage
 
   return (
-    <div className="pt-20 pb-24 px-5">
-      <div className="max-w-md mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8 pt-4"
-        >
-          <div className="w-16 h-16 rounded-2xl bg-nude/50 flex items-center justify-center mx-auto mb-5">
-            <Lock className="w-8 h-8 text-brown-light/50" />
-          </div>
-          <h2 className="font-heading text-3xl font-bold text-brown mb-3">
-            {t('creditCheck.noCreditsTitle')}
-          </h2>
-          <p className="text-brown-light/60 text-base leading-relaxed">
-            {t('creditCheck.noCreditsDesc')}
-          </p>
-        </motion.div>
-
-        <SubscriptionPlans
-          variant="compact"
-          loading={loading}
-          onSelect={handleSubscribe}
-          ctaLabel={t('purchasePage.subscribeCta')}
-          className="mb-4"
-        />
-
-        <p className="text-center text-xs text-brown-light/30 mb-4">{t('purchasePage.securePayment')}</p>
-
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white rounded-3xl overflow-hidden shadow-lg shadow-brown/10 border border-nude/30"
+    >
+      <div className="px-5 pt-5 pb-3">
+        <p className="text-xs font-semibold text-beige-dark uppercase tracking-wide mb-1">Ton design est débloqué ✨</p>
+        <h2 className="font-heading text-2xl font-bold text-brown">Tes ongles parfaits t&apos;attendent</h2>
+      </div>
+      {resultImg && (
+        <button type="button" onClick={onView} className="block w-full aspect-[4/3] overflow-hidden">
+          <img src={resultImg} alt="Ton design" className="w-full h-full object-cover" />
+        </button>
+      )}
+      <div className="p-5">
         <button
-          onClick={onDismiss}
-          className="w-full text-center text-xs text-brown-light/30 py-3 hover:text-brown-light/50 transition-colors"
+          type="button"
+          onClick={onView}
+          className="w-full bg-brown text-offwhite py-3.5 rounded-2xl font-semibold text-sm hover:bg-brown-light transition-colors"
         >
-          {t('creditCheck.back')}
+          Voir mon design en détail →
         </button>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
 export default function Dashboard() {
+  const location = useLocation()
+  const navigate = useNavigate()
   const [chatOpen, setChatOpen] = useState(false)
   const [flowOpen, setFlowOpen] = useState(false)
-  const [conversionDismissed, setConversionDismissed] = useState(false)
-  const { credits, isSubscribed } = useCredits()
+  const { addToHistory } = useCredits()
+  const [unlockedResult, setUnlockedResult] = useState(location.state?.result || null)
 
-  if (credits === 0 && !isSubscribed && !conversionDismissed) {
-    return <NoCreditsConversion onDismiss={() => setConversionDismissed(true)} />
+  useEffect(() => {
+    if (location.state?.result) {
+      addToHistory(location.state.result)
+      setUnlockedResult(location.state.result)
+      return
+    }
+
+    const pending = getFunnelResult()
+    if (pending) {
+      addToHistory(pending)
+      setUnlockedResult(pending)
+      clearFunnelResult()
+      clearSelectedPlan()
+      clearPendingCheckout()
+    }
+  }, [addToHistory, location.state?.result])
+
+  const handleViewDesign = () => {
+    if (!unlockedResult) return
+    navigate(`/app/result/${unlockedResult.id}`, { state: { result: unlockedResult } })
   }
 
   return (
     <>
       <div className="pt-20 pb-24 px-4">
         <div className="max-w-lg mx-auto space-y-6">
+          {unlockedResult && (
+            <UnlockedDesignCard result={unlockedResult} onView={handleViewDesign} />
+          )}
           <CreditCounter />
           <UploadZone onStart={() => setFlowOpen(true)} />
           <RecommendationCard onClick={() => setChatOpen(true)} />

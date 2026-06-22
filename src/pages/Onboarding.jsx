@@ -12,9 +12,11 @@ import Processing from '../components/onboarding/Processing'
 import BlurredResult from '../components/onboarding/BlurredResult'
 import FunnelSignup from '../components/onboarding/FunnelSignup'
 import FunnelPricing from '../components/onboarding/FunnelPricing'
+import FunnelCheckout from '../components/onboarding/FunnelCheckout'
 import { generateNailVisualization } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useCredits } from '../contexts/CreditContext'
+import { persistFunnelResult, getFunnelResult } from '../lib/funnelSession'
 
 const INSPO_DEFAULTS = { shape: 'oval', style: 'nailart', length: 'medium' }
 
@@ -37,7 +39,7 @@ export default function Onboarding() {
   const navigate = useNavigate()
   const location = useLocation()
   const { isAuthenticated } = useAuth()
-  const { createVisualization, completeVisualization, uploadBlobUrl } = useCredits()
+  const { createVisualization, completeVisualization, uploadBlobUrl, isSubscribed } = useCredits()
   const generationRef = useRef(null)
 
   const [step, setStep] = useState('welcome')
@@ -58,14 +60,21 @@ export default function Onboarding() {
   useEffect(() => {
     if (location.pathname === '/onboarding/pricing') {
       setStep('pricing')
+    } else if (location.pathname === '/onboarding/signup') {
+      setStep('signup')
+    } else if (location.pathname === '/onboarding/checkout') {
+      setStep('checkout')
     }
   }, [location.pathname])
 
   useEffect(() => {
-    if (isAuthenticated && step === 'signup') {
-      setStep('pricing')
-    }
-  }, [isAuthenticated, step])
+    const saved = getFunnelResult()
+    if (saved && !result) setResult(saved)
+  }, [])
+
+  useEffect(() => {
+    if (result) persistFunnelResult(result)
+  }, [result])
 
   const goTo = (nextStep) => setStep(nextStep)
 
@@ -149,12 +158,22 @@ export default function Onboarding() {
   }
 
   const handleUnlock = () => {
-    if (isAuthenticated) {
-      goTo('pricing')
-      navigate('/onboarding/pricing', { replace: true })
-    } else {
-      goTo('signup')
+    if (isAuthenticated && isSubscribed) {
+      navigate('/app', { state: { result, unlocked: true } })
+      return
     }
+    goTo('pricing')
+    navigate('/onboarding/pricing', { replace: true })
+  }
+
+  const goToSignup = () => {
+    goTo('signup')
+    navigate('/onboarding/signup')
+  }
+
+  const goToCheckout = () => {
+    goTo('checkout')
+    navigate('/onboarding/checkout')
   }
 
   const showProgress = ['photo', 'inspiration', 'shape', 'style', 'length'].includes(step)
@@ -250,9 +269,11 @@ export default function Onboarding() {
       case 'result':
         return <BlurredResult result={result} onUnlock={handleUnlock} />
       case 'signup':
-        return <FunnelSignup onSuccess={() => { goTo('pricing'); navigate('/onboarding/pricing') }} />
+        return <FunnelSignup onCheckout={goToCheckout} />
       case 'pricing':
-        return <FunnelPricing />
+        return <FunnelPricing onGoSignup={goToSignup} />
+      case 'checkout':
+        return <FunnelCheckout />
       default:
         return <Welcome onNext={() => goTo('photo')} />
     }

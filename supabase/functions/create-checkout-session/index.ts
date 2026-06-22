@@ -62,7 +62,7 @@ serve(async (req) => {
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${appUrl}/app/purchase/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appUrl}/app/purchase`,
+      cancel_url: `${appUrl}/onboarding/pricing`,
       client_reference_id: user.id,
       customer_email: user.email,
       metadata: { packId, userId: user.id },

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { getSelectedPlan, isPendingCheckout } from '../lib/funnelSession'
 
 export default function AuthCallback() {
   const navigate = useNavigate()
@@ -10,9 +11,20 @@ export default function AuthCallback() {
     if (loading) return
     if (!isAuthenticated || !user) return
 
+    const planId = getSelectedPlan()
+    if (planId && isPendingCheckout()) {
+      navigate('/onboarding/checkout', { replace: true })
+      return
+    }
+
     const createdAt = new Date(user.created_at)
     const now = new Date()
     const isNewUser = now - createdAt < 60000
+
+    if (isNewUser && planId) {
+      navigate('/onboarding/checkout', { replace: true })
+      return
+    }
 
     navigate(isNewUser ? '/onboarding' : '/app', { replace: true })
   }, [isAuthenticated, loading, user, navigate])

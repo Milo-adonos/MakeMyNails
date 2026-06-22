@@ -25,16 +25,18 @@ function GoogleIcon() {
   )
 }
 
-export default function GoogleSignInButton({ className = '' }) {
+export default function GoogleSignInButton({ className = '', onBeforeClick, disabled = false }) {
   const { t } = useTranslation()
   const { loginWithGoogle } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const handleClick = async () => {
+    if (disabled) return
     setError('')
     setLoading(true)
     try {
+      onBeforeClick?.()
       await loginWithGoogle()
     } catch (err) {
       setError(err.message)
@@ -47,7 +49,7 @@ export default function GoogleSignInButton({ className = '' }) {
       <button
         type="button"
         onClick={handleClick}
-        disabled={loading}
+        disabled={loading || disabled}
         className="w-full flex items-center justify-center gap-3 bg-white border border-nude/60 text-brown py-3.5 rounded-2xl text-sm font-medium hover:bg-nude/10 transition-colors disabled:opacity-60"
       >
         <GoogleIcon />

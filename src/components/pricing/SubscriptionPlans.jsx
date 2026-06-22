@@ -24,7 +24,9 @@ export default function SubscriptionPlans({
 
   const gridClass = isCompact
     ? 'space-y-3'
-    : 'grid md:grid-cols-2 gap-6 max-w-3xl mx-auto'
+    : isFunnel
+      ? 'grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto'
+      : 'grid md:grid-cols-2 gap-6 max-w-3xl mx-auto'
 
   return (
     <div className={`${gridClass} ${className}`}>

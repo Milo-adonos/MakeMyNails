@@ -1,29 +1,58 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Mail, KeyRound } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import GoogleSignInButton from '../auth/GoogleSignInButton'
+import {
+  getSelectedPlan,
+  getPlanLabel,
+  setPendingCheckout,
+} from '../../lib/funnelSession'
 
-export default function FunnelSignup({ onSuccess }) {
+export default function FunnelSignup({ onCheckout }) {
   const { signup } = useAuth()
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  const selectedPlan = getSelectedPlan()
+  const planLabel = getPlanLabel(selectedPlan)
+
+  const goToCheckout = () => {
+    if (onCheckout) {
+      onCheckout()
+    } else {
+      navigate('/onboarding/checkout')
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!selectedPlan) {
+      navigate('/onboarding/pricing')
+      return
+    }
     setError('')
     setLoading(true)
     try {
       await signup(email, password, '')
-      onSuccess()
+      goToCheckout()
     } catch (err) {
       setError(err.message || 'Une erreur est survenue.')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleGoogleAuth = () => {
+    if (!selectedPlan) {
+      navigate('/onboarding/pricing')
+      return
+    }
+    setPendingCheckout()
   }
 
   return (
@@ -43,9 +72,15 @@ export default function FunnelSignup({ onSuccess }) {
             <h1 className="font-heading text-3xl font-bold text-brown mb-2">
               Crée ton compte pour débloquer
             </h1>
-            <p className="text-brown-light/60 text-sm">
-              Gratuit et en 30 secondes
-            </p>
+            {planLabel ? (
+              <p className="text-brown-light/70 text-sm">
+                Plan sélectionné : <span className="font-semibold text-brown">{planLabel}</span>
+              </p>
+            ) : (
+              <p className="text-brown-light/60 text-sm">
+                Choisis d&apos;abord ton abonnement
+              </p>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
@@ -79,10 +114,10 @@ export default function FunnelSignup({ onSuccess }) {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !selectedPlan}
               className="w-full bg-brown text-offwhite py-4 rounded-2xl font-semibold hover:bg-brown-light transition-colors disabled:opacity-50 mt-2"
             >
-              {loading ? 'Création...' : 'Continuer →'}
+              {loading ? 'Création...' : 'Continuer vers le paiement →'}
             </button>
           </form>
 
@@ -92,10 +127,11 @@ export default function FunnelSignup({ onSuccess }) {
             <div className="flex-1 h-px bg-nude/50" />
           </div>
 
-          <GoogleSignInButton />
+          <GoogleSignInButton onBeforeClick={handleGoogleAuth} disabled={!selectedPlan} />
 
           <Link
-            to={`/login?redirect=${encodeURIComponent('/onboarding/pricing')}&mode=login`}
+            to={`/login?redirect=${encodeURIComponent('/onboarding/checkout')}&mode=login`}
+            onClick={() => selectedPlan && setPendingCheckout()}
             className="block text-center text-sm text-brown-light/60 mt-6 hover:text-brown transition-colors"
           >
             Déjà un compte ? Connexion

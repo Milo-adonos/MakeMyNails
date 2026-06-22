@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
+import { getSelectedPlan, isPendingCheckout } from '../lib/funnelSession'
 import GoogleSignInButton from '../components/auth/GoogleSignInButton'
 
 export default function Login() {
@@ -25,7 +26,12 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated && !handledByForm.current) {
-      navigate(redirect, { replace: true })
+      const planId = getSelectedPlan()
+      if (planId && (isPendingCheckout() || redirect.includes('/onboarding/checkout'))) {
+        navigate('/onboarding/checkout', { replace: true })
+      } else {
+        navigate(redirect, { replace: true })
+      }
     }
   }, [isAuthenticated, navigate, redirect])
 
@@ -37,7 +43,12 @@ export default function Login() {
       handledByForm.current = true
       if (mode === 'login') {
         await login(email, password)
-        navigate(redirect, { replace: true })
+        const planId = getSelectedPlan()
+        if (planId && (isPendingCheckout() || redirect.includes('/onboarding/checkout'))) {
+          navigate('/onboarding/checkout', { replace: true })
+        } else {
+          navigate(redirect, { replace: true })
+        }
       } else {
         await signup(email, password, name)
         navigate(redirect === '/app' ? '/onboarding' : redirect, { replace: true })

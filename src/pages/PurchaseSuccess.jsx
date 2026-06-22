@@ -6,6 +6,12 @@ import { useTranslation } from 'react-i18next'
 import { useCredits } from '../contexts/CreditContext'
 import { useAuth } from '../contexts/AuthContext'
 import Button from '../components/common/Button'
+import {
+  getFunnelResult,
+  clearFunnelResult,
+  clearSelectedPlan,
+  clearPendingCheckout,
+} from '../lib/funnelSession'
 
 export default function PurchaseSuccess() {
   const navigate = useNavigate()
@@ -13,10 +19,16 @@ export default function PurchaseSuccess() {
   const { fetchHistory, fetchPurchases, fetchSubscription } = useCredits()
   const { refreshProfile } = useAuth()
   const [countdown, setCountdown] = useState(5)
+  const funnelResult = useState(() => getFunnelResult())[0]
+
+  const goToApp = () => {
+    clearFunnelResult()
+    clearSelectedPlan()
+    clearPendingCheckout()
+    navigate('/app', funnelResult ? { state: { result: funnelResult, unlocked: true } } : undefined)
+  }
 
   useEffect(() => {
-    // Refresh everything after successful payment
-    // Small delay to let webhook process first
     setTimeout(() => {
       refreshProfile()
       fetchHistory()
@@ -28,7 +40,7 @@ export default function PurchaseSuccess() {
       setCountdown((c) => {
         if (c <= 1) {
           clearInterval(timer)
-          navigate('/app')
+          goToApp()
         }
         return c - 1
       })
@@ -78,7 +90,7 @@ export default function PurchaseSuccess() {
           transition={{ delay: 0.5 }}
           className="space-y-3"
         >
-          <Button onClick={() => navigate('/app')} className="w-full">
+          <Button onClick={goToApp} className="w-full">
             {t('purchaseSuccess.cta')}
           </Button>
           <p className="text-xs text-brown-light/40">

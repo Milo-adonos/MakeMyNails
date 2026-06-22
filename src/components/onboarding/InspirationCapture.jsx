@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Upload, Image } from 'lucide-react'
+import { Upload, Image, ArrowRight } from 'lucide-react'
 import Button from '../common/Button'
 
 export default function InspirationCapture({ onNext, onBack, onInspirationSelect, onSkip }) {
@@ -61,9 +61,10 @@ export default function InspirationCapture({ onNext, onBack, onInspirationSelect
 
           <button
             onClick={onSkip}
-            className="w-full text-brown-light/60 py-3 text-sm hover:text-brown transition-colors"
+            className="w-full flex items-center justify-center gap-2 bg-nude text-brown py-4 rounded-2xl font-semibold text-base border-2 border-brown/20 hover:bg-nude-dark hover:border-brown/40 transition-colors"
           >
-            Continuer sans inspi →
+            Continuer sans inspi
+            <ArrowRight className="w-5 h-5" />
           </button>
         </div>
 
