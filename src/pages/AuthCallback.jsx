@@ -1,32 +1,39 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { getSelectedPlan, isPendingCheckout } from '../lib/funnelSession'
+import {
+  getSelectedPlan,
+  startStripeCheckoutFromSelectedPlan,
+} from '../lib/funnelSession'
 
 export default function AuthCallback() {
   const navigate = useNavigate()
   const { user, isAuthenticated, loading } = useAuth()
+  const handled = useRef(false)
 
   useEffect(() => {
-    if (loading) return
+    if (loading || handled.current) return
     if (!isAuthenticated || !user) return
 
-    const planId = getSelectedPlan()
-    if (planId && isPendingCheckout()) {
-      navigate('/onboarding/checkout', { replace: true })
-      return
+    handled.current = true
+
+    const run = async () => {
+      const selectedPlan = getSelectedPlan()
+
+      if (selectedPlan) {
+        try {
+          await startStripeCheckoutFromSelectedPlan()
+        } catch (err) {
+          console.error(err)
+          navigate('/onboarding/pricing', { replace: true })
+        }
+        return
+      }
+
+      navigate('/app', { replace: true })
     }
 
-    const createdAt = new Date(user.created_at)
-    const now = new Date()
-    const isNewUser = now - createdAt < 60000
-
-    if (isNewUser && planId) {
-      navigate('/onboarding/checkout', { replace: true })
-      return
-    }
-
-    navigate(isNewUser ? '/onboarding' : '/app', { replace: true })
+    run()
   }, [isAuthenticated, loading, user, navigate])
 
   return (

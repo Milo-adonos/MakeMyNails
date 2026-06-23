@@ -8,7 +8,7 @@ import RecommendationChat from '../components/dashboard/RecommendationChat'
 import NewVisualizationFlow from '../components/dashboard/NewVisualizationFlow'
 import HistoryList from '../components/dashboard/HistoryList'
 import { useCredits } from '../contexts/CreditContext'
-import { getFunnelResult, clearFunnelResult, clearSelectedPlan, clearPendingCheckout } from '../lib/funnelSession'
+import { getFunnelResult, clearFunnelResult, clearSelectedPlan } from '../lib/funnelSession'
 
 function UnlockedDesignCard({ result, onView }) {
   const resultImg = result?.result_image_url || result?.resultImage
@@ -62,7 +62,6 @@ export default function Dashboard() {
       setUnlockedResult(pending)
       clearFunnelResult()
       clearSelectedPlan()
-      clearPendingCheckout()
     }
   }, [addToHistory, location.state?.result])
 

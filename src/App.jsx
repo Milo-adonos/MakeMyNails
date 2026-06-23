@@ -23,7 +23,7 @@ function PageFallback() {
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth()
   if (loading) return <PageFallback />
-  if (!isAuthenticated) return <Navigate to="/" replace />
+  if (!isAuthenticated) return <Navigate to="/login" replace />
   return children
 }
 

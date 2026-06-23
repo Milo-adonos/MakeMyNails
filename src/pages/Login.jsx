@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
-import { getSelectedPlan, isPendingCheckout } from '../lib/funnelSession'
+import { getSelectedPlan, startStripeCheckoutFromSelectedPlan } from '../lib/funnelSession'
 import GoogleSignInButton from '../components/auth/GoogleSignInButton'
 
 export default function Login() {
@@ -24,14 +24,22 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  const redirectAfterAuth = async () => {
+    if (getSelectedPlan()) {
+      try {
+        await startStripeCheckoutFromSelectedPlan()
+        return
+      } catch {
+        navigate('/onboarding/checkout', { replace: true })
+        return
+      }
+    }
+    navigate(redirect === '/' ? '/app' : redirect, { replace: true })
+  }
+
   useEffect(() => {
     if (isAuthenticated && !handledByForm.current) {
-      const planId = getSelectedPlan()
-      if (planId && (isPendingCheckout() || redirect.includes('/onboarding/checkout'))) {
-        navigate('/onboarding/checkout', { replace: true })
-      } else {
-        navigate(redirect, { replace: true })
-      }
+      redirectAfterAuth()
     }
   }, [isAuthenticated, navigate, redirect])
 
@@ -43,15 +51,10 @@ export default function Login() {
       handledByForm.current = true
       if (mode === 'login') {
         await login(email, password)
-        const planId = getSelectedPlan()
-        if (planId && (isPendingCheckout() || redirect.includes('/onboarding/checkout'))) {
-          navigate('/onboarding/checkout', { replace: true })
-        } else {
-          navigate(redirect, { replace: true })
-        }
+        await redirectAfterAuth()
       } else {
         await signup(email, password, name)
-        navigate(redirect === '/app' ? '/onboarding' : redirect, { replace: true })
+        await redirectAfterAuth()
       }
     } catch (err) {
       setError(err.message)

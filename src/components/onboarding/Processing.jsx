@@ -71,26 +71,26 @@ export default function Processing({ messages = DEFAULT_MESSAGES }) {
             Génération en cours — environ 15 à 30 secondes
           </p>
         </div>
-      </div>
 
-      <div className="w-full max-w-md mx-auto px-6 pb-8 pt-4">
-        <div className="rounded-2xl bg-nude/45 border border-nude-dark/15 px-5 py-4 shadow-sm backdrop-blur-sm">
-          <p className="font-heading text-base font-semibold text-brown text-center mb-3">
-            Le savais-tu ? 💅
-          </p>
-          <div className="min-h-[3.25rem] flex items-center justify-center overflow-hidden">
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={factIndex}
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -14 }}
-                transition={{ duration: 0.5, ease: 'easeInOut' }}
-                className="text-sm text-brown-light/85 text-center leading-relaxed px-1"
-              >
-                {FACTS[factIndex]}
-              </motion.p>
-            </AnimatePresence>
+        <div className="w-full max-w-md mt-10">
+          <div className="rounded-2xl bg-nude/45 border border-nude-dark/15 px-5 py-4 shadow-sm backdrop-blur-sm">
+            <p className="font-heading text-base font-semibold text-brown text-center mb-3">
+              Le savais-tu ? 💅
+            </p>
+            <div className="min-h-[3.25rem] flex items-center justify-center overflow-hidden">
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={factIndex}
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -14 }}
+                  transition={{ duration: 0.5, ease: 'easeInOut' }}
+                  className="text-sm text-brown-light/85 text-center leading-relaxed px-1"
+                >
+                  {FACTS[factIndex]}
+                </motion.p>
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>

@@ -7,7 +7,7 @@ import GoogleSignInButton from '../auth/GoogleSignInButton'
 import {
   getSelectedPlan,
   getPlanLabel,
-  setPendingCheckout,
+  startStripeCheckoutFromSelectedPlan,
 } from '../../lib/funnelSession'
 
 export default function FunnelSignup({ onCheckout }) {
@@ -21,11 +21,15 @@ export default function FunnelSignup({ onCheckout }) {
   const selectedPlan = getSelectedPlan()
   const planLabel = getPlanLabel(selectedPlan)
 
-  const goToCheckout = () => {
-    if (onCheckout) {
-      onCheckout()
-    } else {
-      navigate('/onboarding/checkout')
+  const goToCheckout = async () => {
+    try {
+      await startStripeCheckoutFromSelectedPlan()
+    } catch (err) {
+      if (onCheckout) {
+        onCheckout()
+      } else {
+        navigate('/onboarding/checkout')
+      }
     }
   }
 
@@ -50,9 +54,7 @@ export default function FunnelSignup({ onCheckout }) {
   const handleGoogleAuth = () => {
     if (!selectedPlan) {
       navigate('/onboarding/pricing')
-      return
     }
-    setPendingCheckout()
   }
 
   return (
@@ -131,7 +133,6 @@ export default function FunnelSignup({ onCheckout }) {
 
           <Link
             to={`/login?redirect=${encodeURIComponent('/onboarding/checkout')}&mode=login`}
-            onClick={() => selectedPlan && setPendingCheckout()}
             className="block text-center text-sm text-brown-light/60 mt-6 hover:text-brown transition-colors"
           >
             Déjà un compte ? Connexion

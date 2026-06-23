@@ -10,7 +10,6 @@ import {
   getFunnelResult,
   clearFunnelResult,
   clearSelectedPlan,
-  clearPendingCheckout,
 } from '../lib/funnelSession'
 
 export default function PurchaseSuccess() {
@@ -24,7 +23,6 @@ export default function PurchaseSuccess() {
   const goToApp = () => {
     clearFunnelResult()
     clearSelectedPlan()
-    clearPendingCheckout()
     navigate('/app', funnelResult ? { state: { result: funnelResult, unlocked: true } } : undefined)
   }
 
