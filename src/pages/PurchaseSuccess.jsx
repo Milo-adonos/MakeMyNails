@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Sparkles } from 'lucide-react'
@@ -12,6 +12,7 @@ import {
   mapVisualizationToResult,
 } from '../lib/funnelSession'
 import { ROUTES } from '../lib/routes'
+import { trackEvent, planKey, getPlanRevenue } from '../lib/radar'
 
 export default function PurchaseSuccess() {
   const navigate = useNavigate()
@@ -21,6 +22,7 @@ export default function PurchaseSuccess() {
   const { refreshProfile, user } = useAuth()
   const [status, setStatus] = useState('loading')
   const sessionId = searchParams.get('session_id')
+  const purchaseTracked = useRef(false)
 
   useEffect(() => {
     if (!sessionId) {
@@ -42,6 +44,16 @@ export default function PurchaseSuccess() {
       if (!sub) {
         setStatus('pending')
         return
+      }
+
+      if (!purchaseTracked.current) {
+        purchaseTracked.current = true
+        const plan = planKey(sub.plan)
+        trackEvent('purchase', {
+          plan,
+          placement: 'stripe_success',
+          source: 'stripe',
+        }, getPlanRevenue(sub.plan))
       }
 
       const funnelResult = getFunnelResult()

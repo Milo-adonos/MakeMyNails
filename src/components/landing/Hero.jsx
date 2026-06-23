@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Button from '../common/Button'
 import { ROUTES } from '../../lib/routes'
+import { trackEvent } from '../../lib/radar'
 
 export default function Hero() {
   const { t } = useTranslation()
@@ -59,7 +60,10 @@ export default function Hero() {
             </p>
 
             <div className="flex justify-center md:justify-start">
-              <Link to={ROUTES.welcome}>
+              <Link
+                to={ROUTES.welcome}
+                onClick={() => trackEvent('cta_click', { placement: 'hero', label: 'try_funnel' })}
+              >
                 <Button size="lg" className="flex items-center gap-2">
                   {t('hero.cta')}
                   <ArrowRight className="w-5 h-5" />

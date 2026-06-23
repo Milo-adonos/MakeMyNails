@@ -6,6 +6,7 @@ import { useCredits } from '../../contexts/CreditContext'
 import { setSelectedPlan } from '../../lib/funnelSession'
 import SubscriptionPlans from '../pricing/SubscriptionPlans'
 import { ROUTES } from '../../lib/routes'
+import { trackEvent, planKey } from '../../lib/radar'
 
 export default function FunnelPricing({ onGoSignup }) {
   const [designCount, setDesignCount] = useState(1247)
@@ -23,6 +24,7 @@ export default function FunnelPricing({ onGoSignup }) {
 
   const handleSelect = async (planId) => {
     setSelectedPlan(planId)
+    trackEvent('plan_selected', { plan: planKey(planId), placement: 'funnel_pricing' })
 
     if (!isAuthenticated) {
       if (onGoSignup) {

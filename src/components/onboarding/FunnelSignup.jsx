@@ -12,6 +12,7 @@ import {
 } from '../../lib/funnelSession'
 import { isMaintenanceMode } from '../../lib/maintenance'
 import { ROUTES } from '../../lib/routes'
+import { trackEvent } from '../../lib/radar'
 
 export default function FunnelSignup({ onCheckout }) {
   const { signup } = useAuth()
@@ -57,6 +58,7 @@ export default function FunnelSignup({ onCheckout }) {
         return
       }
       await signup(email, password, '')
+      trackEvent('signup', { placement: 'funnel', label: 'email' })
       goToCheckout()
     } catch (err) {
       setError(err.message || 'Une erreur est survenue.')

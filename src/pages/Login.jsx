@@ -8,6 +8,7 @@ import { getSelectedPlan, startStripeCheckoutFromSelectedPlan } from '../lib/fun
 import GoogleSignInButton from '../components/auth/GoogleSignInButton'
 import { isMaintenanceMode } from '../lib/maintenance'
 import { ROUTES } from '../lib/routes'
+import { trackEvent } from '../lib/radar'
 
 export default function Login() {
   const { t } = useTranslation()
@@ -53,6 +54,7 @@ export default function Login() {
       handledByForm.current = true
       if (mode === 'login') {
         await login(email, password)
+        trackEvent('login', { placement: 'login_page', label: 'email' })
         await redirectAfterAuth()
       } else {
         if (await isMaintenanceMode()) {
@@ -60,6 +62,7 @@ export default function Login() {
           return
         }
         await signup(email, password, name)
+        trackEvent('signup', { placement: 'login_page', label: 'email' })
         await redirectAfterAuth()
       }
     } catch (err) {

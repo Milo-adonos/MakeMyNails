@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { SUBSCRIPTIONS } from '../../lib/stripe'
 import Button from '../common/Button'
 import { ROUTES } from '../../lib/routes'
+import { trackEvent } from '../../lib/radar'
 
 import { LANDING_VIEWPORT } from '../../lib/motion'
 
@@ -95,7 +96,10 @@ export default function SubscriptionPlans({
                 {isLoading ? t('common.loading') : (ctaLabel || t('pricing.subscribe'))}
               </button>
             ) : (
-              <Link to={ROUTES.welcome}>
+              <Link
+                to={ROUTES.welcome}
+                onClick={() => trackEvent('cta_click', { placement: 'landing_pricing', label: plan.id })}
+              >
                 <Button variant={isPopular ? 'secondary' : 'outline'} className="w-full justify-center">
                   {ctaLabel || t('pricing.subscribe')}
                 </Button>

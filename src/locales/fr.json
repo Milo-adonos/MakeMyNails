@@ -121,6 +121,9 @@
       }
     ]
   },
+  "contact": {
+    "heading": "Une question ? Un souci ?"
+  },
   "onboarding": {
     "welcome": {
       "title": "Bienvenue sur\nMakeMyNails",

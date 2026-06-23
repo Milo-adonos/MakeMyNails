@@ -7,6 +7,7 @@ import {
 } from '../../lib/funnelSession'
 import Processing from './Processing'
 import { ROUTES } from '../../lib/routes'
+import { trackEvent, planKey, getPlanRevenue } from '../../lib/radar'
 
 export default function FunnelCheckout() {
   const navigate = useNavigate()
@@ -26,6 +27,12 @@ export default function FunnelCheckout() {
 
     if (started.current) return
     started.current = true
+
+    const plan = getSelectedPlan()
+    if (plan) {
+      const revenue = getPlanRevenue(plan)
+      trackEvent('checkout_started', { plan: planKey(plan), placement: 'funnel' }, revenue)
+    }
 
     startStripeCheckoutFromSelectedPlan().catch((err) => {
       console.error(err)

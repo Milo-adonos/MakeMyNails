@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { Sparkles, CalendarHeart, Shirt, Crown, ArrowRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { LANDING_VIEWPORT } from '../../lib/motion'
+import { ROUTES } from '../../lib/routes'
+import { trackEvent } from '../../lib/radar'
 
 const featureIcons = [CalendarHeart, Shirt, Sparkles]
 const featureColors = ['bg-nude/30', 'bg-beige/30', 'bg-nude-light/50']
@@ -146,7 +148,8 @@ export default function EmmaSection() {
           className="text-center"
         >
           <Link
-            to="/login?mode=signup"
+            to={`${ROUTES.login}?mode=signup`}
+            onClick={() => trackEvent('cta_click', { placement: 'emma', label: 'signup' })}
             className="inline-flex items-center gap-2 bg-brown text-offwhite px-8 py-4 rounded-2xl font-semibold text-base hover:bg-brown-light transition-colors shadow-lg shadow-brown/20"
           >
             <Crown className="w-4 h-4" />

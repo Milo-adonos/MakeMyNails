@@ -6,6 +6,7 @@ import {
   startStripeCheckoutFromSelectedPlan,
 } from '../lib/funnelSession'
 import { ROUTES } from '../lib/routes'
+import { trackEvent, planKey, getPlanRevenue } from '../lib/radar'
 
 export default function AuthCallback() {
   const navigate = useNavigate()
@@ -23,6 +24,10 @@ export default function AuthCallback() {
 
       if (selectedPlan) {
         try {
+          trackEvent('checkout_started', {
+            plan: planKey(selectedPlan),
+            placement: 'auth_callback',
+          }, getPlanRevenue(selectedPlan))
           await startStripeCheckoutFromSelectedPlan()
         } catch (err) {
           console.error(err)

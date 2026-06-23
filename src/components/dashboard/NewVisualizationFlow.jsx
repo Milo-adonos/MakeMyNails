@@ -7,6 +7,7 @@ import Button from '../common/Button'
 import { generateNailVisualization } from '../../lib/api'
 import { useCredits } from '../../contexts/CreditContext'
 import { ROUTES } from '../../lib/routes'
+import { trackEvent } from '../../lib/radar'
 
 const shapeIds = ['almond', 'square', 'stiletto', 'coffin', 'oval', 'ballerina']
 const styleIds = ['french', 'color', 'nailart', 'gradient', 'minimalist', 'chrome']
@@ -81,6 +82,7 @@ export default function NewVisualizationFlow({ open, onClose }) {
 
       clearInterval(msgInterval)
       onClose()
+      trackEvent('generation_complete', { mode: payload.mode, placement: 'dashboard' })
       navigate(ROUTES.result, { state: { result, locked: false } })
     } catch (err) {
       clearInterval(msgInterval)

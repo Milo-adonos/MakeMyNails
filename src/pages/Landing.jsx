@@ -10,6 +10,7 @@ const Steps = lazy(() => import('../components/landing/Steps'))
 const EmmaSection = lazy(() => import('../components/landing/EmmaSection'))
 const Pricing = lazy(() => import('../components/landing/Pricing'))
 const Testimonials = lazy(() => import('../components/landing/Testimonials'))
+const ContactSection = lazy(() => import('../components/landing/ContactSection'))
 
 function LanguageSwitcher() {
   const { i18n } = useTranslation()
@@ -68,6 +69,7 @@ export default function Landing() {
         <EmmaSection />
         <Pricing />
         <Testimonials />
+        <ContactSection />
       </Suspense>
 
       <Footer />

@@ -19,6 +19,7 @@ import { useCredits } from '../contexts/CreditContext'
 import { persistFunnelResult, getFunnelResult, persistFunnelStep, getFunnelStep } from '../lib/funnelSession'
 import { createBlurredPreview } from '../lib/previewImage'
 import { FUNNEL_STEP_PATH, ROUTES, funnelStepFromPath } from '../lib/routes'
+import { trackEvent } from '../lib/radar'
 
 const INSPO_DEFAULTS = { shape: 'oval', style: 'nailart', length: 'medium' }
 
@@ -176,7 +177,13 @@ export default function Onboarding() {
 
     generationRef.current
       .then((res) => {
-        if (!cancelled && res) goTo('result')
+        if (!cancelled && res) {
+          trackEvent('generation_complete', {
+            mode: res.mode || 'onboarding',
+            placement: 'funnel',
+          })
+          goTo('result')
+        }
       })
       .catch(() => {
         if (!cancelled) generationRef.current = null
@@ -210,6 +217,7 @@ export default function Onboarding() {
   }
 
   const handleUnlock = () => {
+    trackEvent('preview_unlock', { placement: 'funnel' })
     if (isAuthenticated && isSubscribed) {
       navigate(ROUTES.dashboard, { state: { result, unlocked: true } })
       return
