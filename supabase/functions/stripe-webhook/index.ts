@@ -146,6 +146,19 @@ serve(async (req) => {
       })
     }
 
+    const amountEur = session.amount_total
+      ? session.amount_total / 100
+      : (packId === 'sub_exclusif_ia' ? 14.99 : 9.99)
+
+    await supabase.from('payment_events').insert({
+      user_id: userId,
+      stripe_event_id: event.id,
+      event_type: 'checkout.session.completed',
+      amount_eur: amountEur,
+      plan: packId,
+      stripe_subscription_id: stripeSubscriptionId ?? null,
+    })
+
     await markEventProcessed(supabase, event.id, event.type, userId)
   }
 
@@ -198,18 +211,34 @@ serve(async (req) => {
       })
     }
 
+    const amountEur = invoice.amount_paid ? invoice.amount_paid / 100 : 0
+    await supabase.from('payment_events').insert({
+      user_id: userId,
+      stripe_event_id: event.id,
+      event_type: 'invoice.payment_succeeded',
+      amount_eur: amountEur,
+      plan: packId,
+      stripe_subscription_id: subscriptionId,
+    })
+
     await markEventProcessed(supabase, event.id, event.type, userId)
   }
 
   if (event.type === 'customer.subscription.deleted') {
     const subscription = event.data.object as Stripe.Subscription
     const userId = subscription.metadata?.userId
+      || await resolveUserId(supabase, subscription)
     if (userId) {
       await supabase
         .from('subscriptions')
         .update({ status: 'canceled' })
         .eq('user_id', userId)
         .eq('stripe_subscription_id', subscription.id)
+      await supabase.from('subscription_cancellations').insert({
+        user_id: userId,
+        excluded_from_churn: false,
+        canceled_by: 'stripe',
+      })
       await markEventProcessed(supabase, event.id, event.type, userId)
     }
   }

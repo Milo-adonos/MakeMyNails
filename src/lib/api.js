@@ -1,3 +1,5 @@
+import { supabase } from './supabase'
+
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
@@ -132,6 +134,10 @@ export async function generateNailVisualization({
     outfitBase64 = outfit.base64
   }
 
+  const { data: { session } } = await supabase.auth.getSession()
+  const userId = session?.user?.id
+  const userEmail = session?.user?.email
+
   const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-nails`, {
     method: 'POST',
     headers: {
@@ -150,6 +156,10 @@ export async function generateNailVisualization({
       occasion,
       occasionLabel,
       aspectRatio,
+      userId,
+      userEmail,
+      visualizationId,
+      source: mode,
     }),
   })
 

@@ -15,6 +15,8 @@ const Purchase = lazy(() => import('./pages/Purchase'))
 const PurchaseSuccess = lazy(() => import('./pages/PurchaseSuccess'))
 const AuthCallback = lazy(() => import('./pages/AuthCallback'))
 const Result = lazy(() => import('./pages/Result'))
+const AdminGate = lazy(() => import('./pages/admin/AdminRoutes').then((m) => ({ default: m.AdminGate })))
+const AdminDashboardGate = lazy(() => import('./pages/admin/AdminRoutes').then((m) => ({ default: m.AdminDashboardGate })))
 
 function PageFallback() {
   return <div className="min-h-screen bg-offwhite" aria-hidden="true" />
@@ -49,6 +51,8 @@ export default function App() {
           <Route path="/onboarding/signup" element={<Onboarding />} />
           <Route path="/onboarding/checkout" element={<Onboarding />} />
           <Route path="/result" element={<Result />} />
+          <Route path="/admin" element={<AdminGate />} />
+          <Route path="/admin/dashboard" element={<AdminDashboardGate />} />
           <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/app/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
           <Route path="/app/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const FAL_MODEL = 'fal-ai/nano-banana-2/edit'
 const FAL_QUEUE = `https://queue.fal.run/${FAL_MODEL}`
@@ -76,6 +77,23 @@ function buildPrompt(
 function toDataUri(base64: string): string {
   if (base64.startsWith('data:')) return base64
   return `data:image/jpeg;base64,${base64}`
+}
+
+async function getGenerationCost(supabase: ReturnType<typeof createClient>): Promise<number> {
+  const { data } = await supabase.from('admin_settings').select('value').eq('key', 'generation_cost_eur').maybeSingle()
+  const v = data?.value
+  return typeof v === 'number' ? v : Number(v) || 0.08
+}
+
+async function logGeneration(
+  supabase: ReturnType<typeof createClient>,
+  entry: Record<string, unknown>,
+) {
+  try {
+    await supabase.from('generation_logs').insert(entry)
+  } catch (e) {
+    console.error('generation log error:', e)
+  }
 }
 
 function extractResultUrl(json: { images?: Array<{ url?: string }> }): string {
@@ -160,6 +178,13 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  )
+
+  const started = Date.now()
+
   try {
     const falKey = Deno.env.get('FAL_KEY')
     if (!falKey) throw new Error('FAL_KEY not configured')
@@ -171,22 +196,48 @@ serve(async (req) => {
       shape,
       style,
       length,
+      customNote,
       inspirationBase64,
       outfitBase64,
       occasion,
       occasionLabel,
       aspectRatio = 'auto',
+      userId,
+      userEmail,
+      visualizationId,
+      source,
     } = body as {
       photoBase64: string
       mode?: GenerationMode
       shape?: string
       style?: string
       length?: string
+      customNote?: string
       inspirationBase64?: string
       outfitBase64?: string
       occasion?: string
       occasionLabel?: string
       aspectRatio?: string
+      userId?: string
+      userEmail?: string
+      visualizationId?: string
+      source?: string
+    }
+
+    const costEur = await getGenerationCost(supabase)
+
+    const logBase = {
+      user_id: userId || null,
+      visualization_id: visualizationId || null,
+      user_email: userEmail || null,
+      mode,
+      shape: shape || null,
+      style: style || null,
+      length: length || null,
+      custom_note: customNote || null,
+      aspect_ratio: aspectRatio,
+      estimated_cost_eur: costEur,
+      source: source || mode,
     }
 
     if (!photoBase64) {
@@ -227,14 +278,35 @@ serve(async (req) => {
       imageUrls.push(toDataUri(outfitBase64))
     }
 
-    const prompt = buildPrompt(mode, shape, style, occasion, occasionLabel, !!outfitBase64)
+    let prompt = buildPrompt(mode, shape, style, occasion, occasionLabel, !!outfitBase64)
+    if (customNote?.trim()) {
+      prompt += ` Additional user note: ${customNote.trim()}`
+    }
+
     const resultImageUrl = await generateWithFal(falKey, imageUrls, prompt, aspectRatio)
+
+    await logGeneration(supabase, {
+      ...logBase,
+      prompt,
+      result_image_url: resultImageUrl,
+      status: 'success',
+      latency_ms: Date.now() - started,
+    })
 
     return new Response(
       JSON.stringify({ resultImageUrl, mode }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   } catch (err) {
+    await logGeneration(supabase, {
+      user_id: null,
+      mode: 'unknown',
+      prompt: '—',
+      status: 'failed',
+      error_message: err.message,
+      estimated_cost_eur: 0,
+      latency_ms: Date.now() - started,
+    })
     return new Response(
       JSON.stringify({ error: err.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },

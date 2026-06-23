@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { getSelectedPlan, startStripeCheckoutFromSelectedPlan } from '../lib/funnelSession'
 import GoogleSignInButton from '../components/auth/GoogleSignInButton'
+import { isMaintenanceMode } from '../lib/maintenance'
 
 export default function Login() {
   const { t } = useTranslation()
@@ -53,6 +54,10 @@ export default function Login() {
         await login(email, password)
         await redirectAfterAuth()
       } else {
+        if (await isMaintenanceMode()) {
+          setError('Les inscriptions sont temporairement suspendues.')
+          return
+        }
         await signup(email, password, name)
         await redirectAfterAuth()
       }

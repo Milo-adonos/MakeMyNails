@@ -10,6 +10,7 @@ import {
   getPlanLabel,
   startStripeCheckoutFromSelectedPlan,
 } from '../../lib/funnelSession'
+import { isMaintenanceMode } from '../../lib/maintenance'
 
 export default function FunnelSignup({ onCheckout }) {
   const { signup } = useAuth()
@@ -50,6 +51,10 @@ export default function FunnelSignup({ onCheckout }) {
     setError('')
     setLoading(true)
     try {
+      if (await isMaintenanceMode()) {
+        setError('Les inscriptions sont temporairement suspendues.')
+        return
+      }
       await signup(email, password, '')
       goToCheckout()
     } catch (err) {
