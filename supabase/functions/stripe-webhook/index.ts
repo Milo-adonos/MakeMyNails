@@ -9,6 +9,27 @@ const corsHeaders = {
 
 const SUBSCRIPTION_IDS = new Set(['sub_premium', 'sub_exclusif_ia'])
 
+function resolvePackId(metadata?: Stripe.Metadata | null): string | null {
+  const packId = metadata?.packId
+  return packId && SUBSCRIPTION_IDS.has(packId) ? packId : null
+}
+
+async function resolveUserId(
+  supabase: ReturnType<typeof createClient>,
+  subscription: Stripe.Subscription,
+): Promise<string | null> {
+  const fromMeta = subscription.metadata?.userId
+  if (fromMeta) return fromMeta
+
+  const { data } = await supabase
+    .from('subscriptions')
+    .select('user_id')
+    .eq('stripe_subscription_id', subscription.id)
+    .maybeSingle()
+
+  return data?.user_id ?? null
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -41,8 +62,14 @@ serve(async (req) => {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
 
-    if (session.payment_status !== 'paid' && session.mode !== 'subscription') {
-      return new Response(JSON.stringify({ received: true }), {
+    if (session.mode !== 'subscription') {
+      return new Response(JSON.stringify({ received: true, skipped: 'not_subscription' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') {
+      return new Response(JSON.stringify({ received: true, skipped: 'unpaid' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -82,6 +109,56 @@ serve(async (req) => {
     })
     if (error) {
       console.error('activate_subscription_for_user error:', error)
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+  }
+
+  if (event.type === 'invoice.payment_succeeded') {
+    const invoice = event.data.object as Stripe.Invoice
+
+    // Premier paiement déjà géré par checkout.session.completed
+    if (invoice.billing_reason !== 'subscription_cycle') {
+      return new Response(JSON.stringify({ received: true, skipped: invoice.billing_reason }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const subscriptionId = typeof invoice.subscription === 'string'
+      ? invoice.subscription
+      : invoice.subscription?.id
+
+    if (!subscriptionId) {
+      return new Response(JSON.stringify({ received: true, skipped: 'no_subscription' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+    const userId = await resolveUserId(supabase, subscription)
+
+    if (!userId) {
+      console.error('No user for subscription renewal', subscriptionId)
+      return new Response(JSON.stringify({ error: 'User not found for renewal' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const packId = resolvePackId(subscription.metadata)
+
+    const { error } = await supabase.rpc('renew_subscription_for_user', {
+      p_user_id: userId,
+      p_stripe_subscription_id: subscriptionId,
+      p_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+      p_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      p_plan: packId,
+    })
+
+    if (error) {
+      console.error('renew_subscription_for_user error:', error)
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

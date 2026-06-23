@@ -1,0 +1,3 @@
+# Stripe envoie les webhooks sans JWT Supabase — la signature Stripe suffit.
+[functions.stripe-webhook]
+verify_jwt = false
