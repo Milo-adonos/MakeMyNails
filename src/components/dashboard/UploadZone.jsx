@@ -14,8 +14,11 @@ export default function UploadZone({ onStart }) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
     >
+      <h1 className="font-heading text-3xl font-bold text-brown mb-4">
+        {t('dashboard.newLookTitle')}
+      </h1>
+
       <div className="bg-white rounded-3xl shadow-sm shadow-brown/5 overflow-hidden">
         {hasCredits ? (
           <button onClick={onStart} className="w-full flex flex-col items-center gap-4 p-8 group">
@@ -23,7 +26,6 @@ export default function UploadZone({ onStart }) {
               <Plus className="w-8 h-8 text-brown" />
             </div>
             <div className="text-center">
-              <p className="font-heading font-semibold text-brown text-lg mb-1">{t('dashboard.newLookTitle')}</p>
               <p className="text-brown-light/50 text-sm">{t('dashboard.newLookSub')}</p>
             </div>
             <span className="inline-flex items-center gap-2 bg-brown text-offwhite px-6 py-2.5 rounded-xl font-medium text-sm group-hover:bg-brown-light transition-colors">

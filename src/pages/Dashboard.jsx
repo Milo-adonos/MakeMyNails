@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import CreditCounter from '../components/dashboard/CreditCounter'
+import { useTranslation } from 'react-i18next'
 import UploadZone from '../components/dashboard/UploadZone'
 import RecommendationCard from '../components/dashboard/RecommendationCard'
 import RecommendationChat from '../components/dashboard/RecommendationChat'
 import NewVisualizationFlow from '../components/dashboard/NewVisualizationFlow'
-import HistoryList from '../components/dashboard/HistoryList'
 import { useCredits } from '../contexts/CreditContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import { optimizeImageUrl } from '../lib/supabase'
 import {
   getFunnelResult,
   clearFunnelResult,
@@ -17,7 +17,9 @@ import {
 } from '../lib/funnelSession'
 
 function UnlockedDesignCard({ result, onView }) {
+  const { t } = useTranslation()
   const resultImg = result?.result_image_url || result?.resultImage
+  const originalImg = optimizeImageUrl(result?.original_image_url || result?.originalImage, 400)
 
   return (
     <motion.div
@@ -26,45 +28,83 @@ function UnlockedDesignCard({ result, onView }) {
       className="bg-white rounded-3xl overflow-hidden shadow-lg shadow-brown/10 border border-nude/30"
     >
       <div className="px-5 pt-5 pb-3">
-        <p className="text-xs font-semibold text-beige-dark uppercase tracking-wide mb-1">Ton design est débloqué ✨</p>
-        <h2 className="font-heading text-2xl font-bold text-brown">Tes ongles parfaits t&apos;attendent</h2>
+        <p className="text-xs font-semibold text-beige-dark uppercase tracking-wide mb-1">
+          {t('dashboard.unlockedBadge')}
+        </p>
+        <h2 className="font-heading text-2xl font-bold text-brown">{t('dashboard.unlockedTitle')}</h2>
       </div>
-      {resultImg && (
-        <button type="button" onClick={onView} className="block w-full aspect-[4/3] overflow-hidden">
-          <img src={resultImg} alt="Ton design" className="w-full h-full object-cover" />
-        </button>
-      )}
-      <div className="p-5">
+
+      <button type="button" onClick={onView} className="block w-full px-5 pb-3">
+        <div className="grid grid-cols-2 gap-2 rounded-2xl overflow-hidden">
+          <div className="relative aspect-[3/4] bg-nude/20">
+            {originalImg ? (
+              <img src={originalImg} alt={t('result.before')} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-brown-light/30 text-sm">
+                {t('result.before')}
+              </div>
+            )}
+            <span className="absolute bottom-1.5 left-1.5 bg-black/40 text-white text-[10px] px-2 py-0.5 rounded-full">
+              {t('result.before')}
+            </span>
+          </div>
+          <div className="relative aspect-[3/4] bg-nude/20">
+            {resultImg && (
+              <img src={resultImg} alt={t('result.after')} className="w-full h-full object-cover" />
+            )}
+            <span className="absolute bottom-1.5 left-1.5 bg-black/40 text-white text-[10px] px-2 py-0.5 rounded-full">
+              {t('result.after')}
+            </span>
+          </div>
+        </div>
+      </button>
+
+      <div className="p-5 pt-2">
         <button
           type="button"
           onClick={onView}
           className="w-full bg-brown text-offwhite py-3.5 rounded-2xl font-semibold text-sm hover:bg-brown-light transition-colors"
         >
-          Voir mon design en détail →
+          {t('dashboard.unlockedCta')}
         </button>
       </div>
     </motion.div>
   )
 }
 
-async function persistResultToDb(userId, result) {
+async function persistResultToDb(userId, result, uploadBlobUrl) {
   const resultUrl = result?.result_image_url || result?.resultImage
   if (!userId || !resultUrl) return result
 
+  let originalUrl = result?.original_image_url || result?.originalImage || null
+  if (originalUrl?.startsWith('blob:') && uploadBlobUrl) {
+    const uploaded = await uploadBlobUrl(originalUrl)
+    if (uploaded) originalUrl = uploaded
+  }
+
   const { data: existing } = await supabase
     .from('visualizations')
-    .select('id')
+    .select('id, original_image_url, result_image_url, shape, style, length, created_at')
     .eq('user_id', userId)
     .eq('result_image_url', resultUrl)
     .maybeSingle()
 
-  if (existing) return mapVisualizationToResult(existing)
+  if (existing) {
+    if (!existing.original_image_url && originalUrl) {
+      await supabase
+        .from('visualizations')
+        .update({ original_image_url: originalUrl })
+        .eq('id', existing.id)
+      return mapVisualizationToResult({ ...existing, original_image_url: originalUrl })
+    }
+    return mapVisualizationToResult(existing)
+  }
 
   const { data } = await supabase
     .from('visualizations')
     .insert({
       user_id: userId,
-      original_image_url: result.original_image_url || result.originalImage || null,
+      original_image_url: originalUrl,
       result_image_url: resultUrl,
       shape: result.shape || 'oval',
       style: result.style || 'french',
@@ -74,7 +114,7 @@ async function persistResultToDb(userId, result) {
     .select()
     .single()
 
-  return data ? mapVisualizationToResult(data) : result
+  return data ? mapVisualizationToResult(data) : { ...result, originalImage: originalUrl, original_image_url: originalUrl }
 }
 
 export default function Dashboard() {
@@ -83,7 +123,7 @@ export default function Dashboard() {
   const { user } = useAuth()
   const [chatOpen, setChatOpen] = useState(false)
   const [flowOpen, setFlowOpen] = useState(false)
-  const { addToHistory, isSubscribed, fetchHistory } = useCredits()
+  const { addToHistory, isSubscribed, fetchHistory, uploadBlobUrl } = useCredits()
   const [unlockedResult, setUnlockedResult] = useState(null)
 
   useEffect(() => {
@@ -93,11 +133,11 @@ export default function Dashboard() {
       let result = null
 
       if (location.state?.unlocked && location.state?.result) {
-        result = await persistResultToDb(user.id, location.state.result)
+        result = await persistResultToDb(user.id, location.state.result, uploadBlobUrl)
       } else {
         const pending = getFunnelResult()
         if (pending) {
-          result = await persistResultToDb(user.id, pending)
+          result = await persistResultToDb(user.id, pending, uploadBlobUrl)
           clearFunnelResult()
         }
       }
@@ -115,7 +155,7 @@ export default function Dashboard() {
     }
 
     unlock()
-  }, [isSubscribed, user?.id, location.state?.unlocked, location.state?.result])
+  }, [isSubscribed, user?.id, location.state?.unlocked, location.state?.result, uploadBlobUrl])
 
   const handleViewDesign = () => {
     if (!unlockedResult) return
@@ -124,15 +164,13 @@ export default function Dashboard() {
 
   return (
     <>
-      <div className="pt-20 pb-24 px-4">
+      <div className="app-shell px-4">
         <div className="max-w-lg mx-auto space-y-6">
+          <UploadZone onStart={() => setFlowOpen(true)} />
           {isSubscribed && unlockedResult && (
             <UnlockedDesignCard result={unlockedResult} onView={handleViewDesign} />
           )}
-          <CreditCounter />
-          <UploadZone onStart={() => setFlowOpen(true)} />
           <RecommendationCard onClick={() => setChatOpen(true)} />
-          <HistoryList limit={3} />
         </div>
       </div>
 

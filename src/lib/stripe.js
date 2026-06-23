@@ -50,3 +50,18 @@ export async function createCheckoutSession(planId, accessToken) {
   if (!res.ok) throw new Error(data.error || data.message || `HTTP ${res.status} — ${JSON.stringify(data)}`)
   return data.url
 }
+
+export async function createPortalSession(accessToken) {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/create-portal-session`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+      'apikey': SUPABASE_ANON_KEY,
+    },
+  })
+
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || data.message || `HTTP ${res.status}`)
+  return data.url
+}

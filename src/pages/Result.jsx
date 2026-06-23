@@ -7,6 +7,7 @@ import { useCredits } from '../contexts/CreditContext'
 import { useAuth } from '../contexts/AuthContext'
 import Button from '../components/common/Button'
 import { optimizeImageUrl } from '../lib/supabase'
+import { saveImageToGallery } from '../lib/saveImage'
 
 export default function Result() {
   const { id } = useParams()
@@ -27,6 +28,8 @@ export default function Result() {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [beforeLoaded, setBeforeLoaded] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   useEffect(() => {
     if (isAuthenticated && locked) {
@@ -57,12 +60,16 @@ export default function Result() {
   const originalImg = optimizeImageUrl(result.original_image_url || result.originalImage)
   const resultImg = result.result_image_url || result.resultImage
 
-  const handleSave = () => {
-    if (resultImg) {
-      const a = document.createElement('a')
-      a.href = resultImg
-      a.download = `makemynails-${result.id}.png`
-      a.click()
+  const handleSave = async () => {
+    if (!resultImg) return
+    setSaving(true)
+    setSaveError('')
+    try {
+      await saveImageToGallery(resultImg, `makemynails-${result.id}.jpg`)
+    } catch {
+      setSaveError(t('result.saveError'))
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -273,8 +280,8 @@ export default function Result() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-offwhite to-nude-light/20 px-4 py-8">
-      <div className="max-w-lg mx-auto pt-12">
+    <div className="app-shell bg-gradient-to-b from-offwhite to-nude-light/20 px-4">
+      <div className="max-w-lg mx-auto">
         <button onClick={() => navigate('/app')} className="flex items-center gap-2 text-brown-light/60 hover:text-brown transition-colors mb-6">
           <ArrowLeft className="w-4 h-4" />
           <span className="text-sm">{t('result.back')}</span>
@@ -336,15 +343,22 @@ export default function Result() {
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <button onClick={handleSave} className="flex items-center justify-center gap-2 bg-white rounded-2xl p-4 shadow-sm shadow-brown/5 hover:shadow-md transition-shadow">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center justify-center gap-2 bg-white rounded-2xl p-4 shadow-sm shadow-brown/5 hover:shadow-md transition-shadow disabled:opacity-50"
+            >
               <Download className="w-5 h-5 text-brown-light" />
-              <span className="text-sm font-medium text-brown">{t('result.save')}</span>
+              <span className="text-sm font-medium text-brown">
+                {saving ? '...' : t('result.save')}
+              </span>
             </button>
             <button onClick={handleShare} className="flex items-center justify-center gap-2 bg-white rounded-2xl p-4 shadow-sm shadow-brown/5 hover:shadow-md transition-shadow">
               <Share2 className="w-5 h-5 text-brown-light" />
               <span className="text-sm font-medium text-brown">{t('result.share')}</span>
             </button>
           </div>
+          {saveError && <p className="text-xs text-red-500 text-center">{saveError}</p>}
 
           <Button onClick={() => navigate(isAuthenticated ? '/app' : '/onboarding')} className="w-full flex items-center justify-center gap-2">
             <RotateCcw className="w-4 h-4" />

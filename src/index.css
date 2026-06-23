@@ -77,6 +77,16 @@ h1, h2, h3, h4, h5, h6 {
   animation: pulse-soft 2s ease-in-out infinite;
 }
 
+/* App shell: scrollable content above fixed bottom nav (mobile) */
+.app-shell {
+  padding-top: 5rem;
+  padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
 }

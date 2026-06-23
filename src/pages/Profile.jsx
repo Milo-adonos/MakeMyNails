@@ -5,6 +5,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCredits } from '../contexts/CreditContext'
 import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
+import { createPortalSession } from '../lib/stripe'
 import Button from '../components/common/Button'
 
 export default function Profile() {
@@ -19,6 +21,10 @@ export default function Profile() {
   const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [portalLoading, setPortalLoading] = useState(false)
+
+  const planLabel = subscription?.plan === 'exclusif_ia' ? 'Exclusif IA' : 'Premium'
+  const looksDisplay = isSubscribed ? '∞' : credits
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -46,8 +52,21 @@ export default function Profile() {
     navigate('/')
   }
 
+  const openSubscriptionPortal = async () => {
+    setPortalLoading(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) throw new Error('Non connectée')
+      const url = await createPortalSession(session.access_token)
+      window.location.href = url
+    } catch (err) {
+      alert(err.message || 'Impossible d\'ouvrir la gestion d\'abonnement')
+      setPortalLoading(false)
+    }
+  }
+
   return (
-    <div className="pt-20 pb-24 px-4">
+    <div className="app-shell px-4">
       <div className="max-w-lg mx-auto space-y-6">
         <h1 className="font-heading text-3xl font-bold text-brown">{t('profilePage.title')}</h1>
 
@@ -135,12 +154,20 @@ export default function Profile() {
               </div>
               <div>
                 <p className="font-medium text-brown">{t('profilePage.yourLooks')}</p>
-                <p className="text-sm text-brown-light/60">{credits} {credits !== 1 ? t('profilePage.looksToCreatePlural') : t('profilePage.looksToCreate')}</p>
+                <p className="text-sm text-brown-light/60">
+                  <span className="font-semibold text-brown">{looksDisplay}</span>
+                  {' '}
+                  {isSubscribed
+                    ? t('profilePage.unlimitedLooks')
+                    : (credits !== 1 ? t('profilePage.looksToCreatePlural') : t('profilePage.looksToCreate'))}
+                </p>
               </div>
             </div>
-            <Link to="/app/purchase" className="text-sm text-beige-dark font-medium hover:text-brown transition-colors">
-              {t('profilePage.getMore')}
-            </Link>
+            {!isSubscribed && (
+              <Link to="/app/purchase" className="text-sm text-beige-dark font-medium hover:text-brown transition-colors">
+                {t('profilePage.getMore')}
+              </Link>
+            )}
           </div>
         </motion.div>
 
@@ -152,19 +179,33 @@ export default function Profile() {
             className="bg-white rounded-3xl p-6 shadow-sm shadow-brown/5"
           >
             <h3 className="font-heading text-lg font-semibold text-brown mb-2">
-              Mon abonnement
+              {t('profilePage.subscription')}
             </h3>
-            <p className="text-sm font-medium text-brown">
-              {subscription.plan === 'exclusif_ia' ? 'Exclusif IA' : 'Premium'}
-            </p>
+            <p className="text-sm font-medium text-brown">{planLabel}</p>
             <p className="text-xs text-brown-light/60 mt-1">
-              Actif jusqu&apos;au{' '}
+              {t('profilePage.activeUntil')}{' '}
               {new Date(subscription.current_period_end).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', {
                 day: 'numeric',
                 month: 'long',
                 year: 'numeric',
               })}
             </p>
+            <button
+              type="button"
+              onClick={openSubscriptionPortal}
+              disabled={portalLoading}
+              className="mt-4 w-full bg-brown text-offwhite py-3 rounded-2xl font-semibold text-sm hover:bg-brown-light transition-colors disabled:opacity-50"
+            >
+              {portalLoading ? '...' : t('profilePage.manageSubscription')}
+            </button>
+            <button
+              type="button"
+              onClick={openSubscriptionPortal}
+              disabled={portalLoading}
+              className="mt-3 w-full text-[10px] text-brown-light/40 hover:text-brown-light/60 transition-colors"
+            >
+              {t('profilePage.cancelSubscription')}
+            </button>
           </motion.div>
         )}
 
@@ -194,7 +235,6 @@ export default function Profile() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-brown">{Number(p.amount).toFixed(2)}€</p>
-                    <p className="text-xs text-brown-light/50">+{p.credits} look{p.credits !== 1 ? 's' : ''}</p>
                   </div>
                 </div>
               ))}

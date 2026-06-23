@@ -7,7 +7,7 @@ import { useCredits } from '../../contexts/CreditContext'
 export default function Navbar() {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
-  const { credits } = useCredits()
+  const { credits, isSubscribed } = useCredits()
   const location = useLocation()
 
   const isApp = location.pathname.startsWith('/app')
@@ -20,6 +20,9 @@ export default function Navbar() {
     { to: '/app/profile', icon: User, label: t('appNav.profile') },
   ]
 
+  const creditsDisplay = isSubscribed ? '∞' : credits
+  const creditsLink = isSubscribed ? '/app/profile' : '/app/purchase'
+
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 glass-strong">
@@ -30,9 +33,9 @@ export default function Navbar() {
           </Link>
 
           <div className="flex items-center gap-3">
-            <Link to="/app/purchase" className="flex items-center gap-1.5 bg-nude/60 px-3 py-1.5 rounded-full">
+            <Link to={creditsLink} className="flex items-center gap-1.5 bg-nude/60 px-3 py-1.5 rounded-full">
               <img src="/logo.webp" alt="" className="w-4 h-4 rounded-md object-cover" />
-              <span className="text-sm font-semibold text-brown">{credits}</span>
+              <span className="text-sm font-semibold text-brown">{creditsDisplay}</span>
             </Link>
 
             <button onClick={() => setOpen(!open)} className="p-2 rounded-xl hover:bg-nude/30 transition-colors">
@@ -60,8 +63,7 @@ export default function Navbar() {
         )}
       </nav>
 
-      {/* Bottom nav for mobile */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 glass-strong border-t border-nude/20 md:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-50 glass-strong border-t border-nude/20 md:hidden pb-[env(safe-area-inset-bottom,0px)]">
         <div className="max-w-lg mx-auto flex justify-around py-2">
           {links.map((link) => (
             <Link

@@ -31,7 +31,7 @@ export default function Purchase() {
   }
 
   return (
-    <div className="pt-20 pb-24 px-4">
+    <div className="app-shell px-4">
       <div className="max-w-lg mx-auto">
         <button
           onClick={() => navigate(-1)}
