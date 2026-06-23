@@ -48,11 +48,15 @@ function buildOnboardingPrompt(shape: string, style: string): string {
   return `Keep absolutely everything from image 1 unchanged — skin tone, hand shape, fingers, rings, background, lighting, shadows. Only replace the nails with ${shapeLabel} shaped nails in ${styleLabel} style. Do not alter any other detail. Preserve the exact same framing, angle, and quality as image 1.`
 }
 
-function buildEmmaPrompt(occasion?: string, occasionLabel?: string): string {
+function buildEmmaPrompt(occasion?: string, occasionLabel?: string, hasOutfit?: boolean): string {
   const label = occasionLabel?.trim()
     || (occasion ? OCCASION_LABELS[occasion.toLowerCase()] : null)
     || 'the chosen occasion'
-  return `Keep absolutely everything from image 1 unchanged. Only replace the nails with a design perfectly suited for ${label}, adapted to the skin tone visible in the image. Do not alter any other detail.`
+  let prompt = `Keep absolutely everything from image 1 unchanged. Only replace the nails with a design perfectly suited for ${label}, adapted to the skin tone visible in the image.`
+  if (hasOutfit) {
+    prompt += ' Use image 2 as outfit inspiration — coordinate the nail colors and style with the outfit while keeping the hand from image 1 unchanged.'
+  }
+  return `${prompt} Do not alter any other detail.`
 }
 
 function buildPrompt(
@@ -61,9 +65,10 @@ function buildPrompt(
   style?: string,
   occasion?: string,
   occasionLabel?: string,
+  hasOutfit?: boolean,
 ): string {
   if (mode === 'inspiration') return PROMPT_INSPIRATION
-  if (mode === 'emma') return buildEmmaPrompt(occasion, occasionLabel)
+  if (mode === 'emma') return buildEmmaPrompt(occasion, occasionLabel, hasOutfit)
   if (!shape || !style) throw new Error('shape and style are required for onboarding mode')
   return buildOnboardingPrompt(shape, style)
 }
@@ -222,7 +227,7 @@ serve(async (req) => {
       imageUrls.push(toDataUri(outfitBase64))
     }
 
-    const prompt = buildPrompt(mode, shape, style, occasion, occasionLabel)
+    const prompt = buildPrompt(mode, shape, style, occasion, occasionLabel, !!outfitBase64)
     const resultImageUrl = await generateWithFal(falKey, imageUrls, prompt, aspectRatio)
 
     return new Response(

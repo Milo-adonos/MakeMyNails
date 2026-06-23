@@ -98,13 +98,13 @@ export async function generateNailVisualization({
   outfitPhoto,
   occasion,
   occasionLabel,
-}) {
+}, visualizationId = null) {
   if (!photo) throw new Error('Aucune photo fournie. Veuillez reprendre depuis le début.')
 
   if (import.meta.env.VITE_MOCK_GENERATION === 'true') {
     await new Promise((r) => setTimeout(r, 2500))
     return {
-      id: crypto.randomUUID(),
+      id: visualizationId || crypto.randomUUID(),
       originalImage: photo,
       resultImage: '/after-1.webp',
       shape: shape || 'oval',
@@ -154,7 +154,7 @@ export async function generateNailVisualization({
   if (!res.ok) throw new Error(data.error || 'Generation failed')
 
   return {
-    id: crypto.randomUUID(),
+    id: visualizationId || crypto.randomUUID(),
     originalImage: photo,
     resultImage: data.resultImageUrl,
     shape,

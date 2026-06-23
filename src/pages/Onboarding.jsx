@@ -16,7 +16,8 @@ import FunnelCheckout from '../components/onboarding/FunnelCheckout'
 import { generateNailVisualization } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useCredits } from '../contexts/CreditContext'
-import { persistFunnelResult, getFunnelResult } from '../lib/funnelSession'
+import { persistFunnelResult, getFunnelResult, persistFunnelStep, getFunnelStep } from '../lib/funnelSession'
+import { createBlurredPreview } from '../lib/previewImage'
 
 const INSPO_DEFAULTS = { shape: 'oval', style: 'nailart', length: 'medium' }
 
@@ -41,8 +42,16 @@ export default function Onboarding() {
   const { isAuthenticated } = useAuth()
   const { createVisualization, completeVisualization, uploadBlobUrl, isSubscribed } = useCredits()
   const generationRef = useRef(null)
+  const preselectHandled = useRef(false)
 
-  const [step, setStep] = useState('welcome')
+  const [step, setStep] = useState(() => {
+    if (typeof window === 'undefined') return 'welcome'
+    const path = window.location.pathname
+    if (path === '/onboarding/pricing') return 'pricing'
+    if (path === '/onboarding/signup') return 'signup'
+    if (path === '/onboarding/checkout') return 'checkout'
+    return getFunnelStep() || 'welcome'
+  })
   const [result, setResult] = useState(null)
   const [generationError, setGenerationError] = useState(null)
   const [skipStyleSteps, setSkipStyleSteps] = useState(false)
@@ -69,18 +78,32 @@ export default function Onboarding() {
 
   useEffect(() => {
     const saved = getFunnelResult()
-    if (saved && !result) setResult(saved)
+    if (saved && !result) {
+      setResult(saved)
+      const savedStep = getFunnelStep()
+      if (savedStep === 'result' || savedStep === 'pricing' || savedStep === 'signup') {
+        setStep(savedStep)
+      } else {
+        setStep('result')
+        persistFunnelStep('result')
+      }
+    }
   }, [])
 
   useEffect(() => {
     if (result) persistFunnelResult(result)
   }, [result])
 
-  const goTo = (nextStep) => setStep(nextStep)
+  const goTo = (nextStep) => {
+    setStep(nextStep)
+    if (['result', 'pricing', 'signup', 'checkout', 'processing'].includes(nextStep)) {
+      persistFunnelStep(nextStep)
+    }
+  }
 
   const runGeneration = useCallback(async (genData) => {
     let vizId = null
-    if (isAuthenticated) {
+    if (isAuthenticated && isSubscribed) {
       const originalImageUrl = await uploadBlobUrl(genData.photo)
       const vizResult = await createVisualization({
         shape: genData.shape,
@@ -91,14 +114,19 @@ export default function Onboarding() {
       vizId = vizResult?.visualization_id
     }
 
-    const generated = await generateNailVisualization(genData)
+    const generated = await generateNailVisualization(genData, vizId)
 
-    if (isAuthenticated && vizId && generated.resultImage) {
+    if (generated.resultImage) {
+      const previewImage = await createBlurredPreview(generated.resultImage)
+      if (previewImage) generated.previewImage = previewImage
+    }
+
+    if (isAuthenticated && isSubscribed && vizId && generated.resultImage) {
       await completeVisualization(vizId, generated.resultImage)
     }
 
     return generated
-  }, [isAuthenticated, createVisualization, completeVisualization, uploadBlobUrl])
+  }, [isAuthenticated, isSubscribed, createVisualization, completeVisualization, uploadBlobUrl])
 
   const enterProcessing = useCallback((genData) => {
     if (!genData.photo) {
@@ -116,6 +144,29 @@ export default function Onboarding() {
       })
     goTo('processing')
   }, [runGeneration])
+
+  useEffect(() => {
+    if (preselectHandled.current) return
+    const s = location.state
+    if (!s?.photo) return
+    preselectHandled.current = true
+
+    const newData = {
+      photo: s.photo,
+      shape: s.preselectedShape || null,
+      style: s.preselectedStyle || null,
+      length: s.preselectedLength || null,
+      outfitPhoto: s.outfitPhoto || null,
+    }
+    setData((d) => ({ ...d, ...newData }))
+    window.history.replaceState({}, '')
+
+    if (newData.shape && newData.style && newData.length) {
+      enterProcessing(buildGenPayload(newData))
+    } else if (newData.photo) {
+      goTo('inspiration')
+    }
+  }, [location.state, enterProcessing])
 
   useEffect(() => {
     if (step !== 'processing' || !generationRef.current) return

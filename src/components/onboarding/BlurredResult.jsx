@@ -1,41 +1,48 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { optimizeImageUrl } from '../../lib/supabase'
+import { createBlurredPreview } from '../../lib/previewImage'
 
 export default function BlurredResult({ result, onUnlock }) {
-  const resultImg = result?.result_image_url || result?.resultImage
+  const fullResultImg = result?.result_image_url || result?.resultImage
+  const storedPreview = result?.previewImage
   const originalImg = optimizeImageUrl(result?.original_image_url || result?.originalImage)
+  const [previewSrc, setPreviewSrc] = useState(storedPreview || null)
   const [imageLoaded, setImageLoaded] = useState(false)
+
+  useEffect(() => {
+    if (storedPreview) {
+      setPreviewSrc(storedPreview)
+      return
+    }
+    if (!fullResultImg) return
+    createBlurredPreview(fullResultImg).then((src) => {
+      if (src) setPreviewSrc(src)
+    })
+  }, [fullResultImg, storedPreview])
+
+  const displaySrc = previewSrc || originalImg
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-offwhite to-nude-light/30 px-4 py-8 flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center max-w-md mx-auto w-full">
-        <div className="relative w-full rounded-3xl overflow-hidden shadow-xl aspect-[3/4] mb-8 bg-nude/20">
-          {resultImg ? (
+        <div className="relative w-full rounded-3xl overflow-hidden shadow-xl aspect-[3/4] mb-8 bg-nude/20 select-none">
+          {displaySrc ? (
             <>
               <img
-                src={resultImg}
-                alt="Résultat"
-                className="w-full h-full object-cover"
+                src={displaySrc}
+                alt="Aperçu flouté"
+                draggable={false}
+                onContextMenu={(e) => e.preventDefault()}
+                className="w-full h-full object-cover scale-110"
+                style={{ filter: 'blur(18px)' }}
                 onLoad={() => setImageLoaded(true)}
               />
               {imageLoaded && (
                 <div
-                  className="absolute inset-0 backdrop-blur-xl bg-offwhite/25"
+                  className="absolute inset-0 bg-offwhite/30 pointer-events-none"
                   aria-hidden="true"
                 />
-              )}
-            </>
-          ) : originalImg ? (
-            <>
-              <img
-                src={originalImg}
-                alt="Aperçu"
-                className="w-full h-full object-cover"
-                onLoad={() => setImageLoaded(true)}
-              />
-              {imageLoaded && (
-                <div className="absolute inset-0 backdrop-blur-xl bg-offwhite/25" aria-hidden="true" />
               )}
             </>
           ) : (

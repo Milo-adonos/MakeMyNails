@@ -30,7 +30,7 @@ export default function Login() {
         await startStripeCheckoutFromSelectedPlan()
         return
       } catch {
-        navigate('/onboarding/checkout', { replace: true })
+        navigate('/onboarding/pricing', { replace: true })
         return
       }
     }

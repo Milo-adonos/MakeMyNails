@@ -8,7 +8,13 @@ import RecommendationChat from '../components/dashboard/RecommendationChat'
 import NewVisualizationFlow from '../components/dashboard/NewVisualizationFlow'
 import HistoryList from '../components/dashboard/HistoryList'
 import { useCredits } from '../contexts/CreditContext'
-import { getFunnelResult, clearFunnelResult, clearSelectedPlan } from '../lib/funnelSession'
+import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
+import {
+  getFunnelResult,
+  clearFunnelResult,
+  mapVisualizationToResult,
+} from '../lib/funnelSession'
 
 function UnlockedDesignCard({ result, onView }) {
   const resultImg = result?.result_image_url || result?.resultImage
@@ -41,29 +47,75 @@ function UnlockedDesignCard({ result, onView }) {
   )
 }
 
+async function persistResultToDb(userId, result) {
+  const resultUrl = result?.result_image_url || result?.resultImage
+  if (!userId || !resultUrl) return result
+
+  const { data: existing } = await supabase
+    .from('visualizations')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('result_image_url', resultUrl)
+    .maybeSingle()
+
+  if (existing) return mapVisualizationToResult(existing)
+
+  const { data } = await supabase
+    .from('visualizations')
+    .insert({
+      user_id: userId,
+      original_image_url: result.original_image_url || result.originalImage || null,
+      result_image_url: resultUrl,
+      shape: result.shape || 'oval',
+      style: result.style || 'french',
+      length: result.length || 'medium',
+      status: 'completed',
+    })
+    .select()
+    .single()
+
+  return data ? mapVisualizationToResult(data) : result
+}
+
 export default function Dashboard() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [chatOpen, setChatOpen] = useState(false)
   const [flowOpen, setFlowOpen] = useState(false)
-  const { addToHistory } = useCredits()
-  const [unlockedResult, setUnlockedResult] = useState(location.state?.result || null)
+  const { addToHistory, isSubscribed, fetchHistory } = useCredits()
+  const [unlockedResult, setUnlockedResult] = useState(null)
 
   useEffect(() => {
-    if (location.state?.result) {
-      addToHistory(location.state.result)
-      setUnlockedResult(location.state.result)
-      return
+    if (!isSubscribed || !user) return
+
+    const unlock = async () => {
+      let result = null
+
+      if (location.state?.unlocked && location.state?.result) {
+        result = await persistResultToDb(user.id, location.state.result)
+      } else {
+        const pending = getFunnelResult()
+        if (pending) {
+          result = await persistResultToDb(user.id, pending)
+          clearFunnelResult()
+        }
+      }
+
+      if (!result) {
+        const items = await fetchHistory()
+        const latest = items.find((v) => v.result_image_url)
+        if (latest) result = mapVisualizationToResult(latest)
+      }
+
+      if (result) {
+        addToHistory(result)
+        setUnlockedResult(result)
+      }
     }
 
-    const pending = getFunnelResult()
-    if (pending) {
-      addToHistory(pending)
-      setUnlockedResult(pending)
-      clearFunnelResult()
-      clearSelectedPlan()
-    }
-  }, [addToHistory, location.state?.result])
+    unlock()
+  }, [isSubscribed, user?.id, location.state?.unlocked, location.state?.result])
 
   const handleViewDesign = () => {
     if (!unlockedResult) return
@@ -74,7 +126,7 @@ export default function Dashboard() {
     <>
       <div className="pt-20 pb-24 px-4">
         <div className="max-w-lg mx-auto space-y-6">
-          {unlockedResult && (
+          {isSubscribed && unlockedResult && (
             <UnlockedDesignCard result={unlockedResult} onView={handleViewDesign} />
           )}
           <CreditCounter />

@@ -9,7 +9,7 @@ import Button from '../components/common/Button'
 
 export default function Profile() {
   const { t, i18n } = useTranslation()
-  const { credits, purchases } = useCredits()
+  const { credits, purchases, subscription, isSubscribed } = useCredits()
   const { user, profile, logout, login, signup, isAuthenticated } = useAuth()
   const navigate = useNavigate()
 
@@ -143,6 +143,30 @@ export default function Profile() {
             </Link>
           </div>
         </motion.div>
+
+        {isAuthenticated && isSubscribed && subscription && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="bg-white rounded-3xl p-6 shadow-sm shadow-brown/5"
+          >
+            <h3 className="font-heading text-lg font-semibold text-brown mb-2">
+              Mon abonnement
+            </h3>
+            <p className="text-sm font-medium text-brown">
+              {subscription.plan === 'exclusif_ia' ? 'Exclusif IA' : 'Premium'}
+            </p>
+            <p className="text-xs text-brown-light/60 mt-1">
+              Actif jusqu&apos;au{' '}
+              {new Date(subscription.current_period_end).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </p>
+          </motion.div>
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}

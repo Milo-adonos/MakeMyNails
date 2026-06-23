@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Mail, KeyRound } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import GoogleSignInButton from '../auth/GoogleSignInButton'
+import { supabase } from '../../lib/supabase'
 import {
   getSelectedPlan,
   getPlanLabel,
@@ -22,15 +23,22 @@ export default function FunnelSignup({ onCheckout }) {
   const planLabel = getPlanLabel(selectedPlan)
 
   const goToCheckout = async () => {
-    try {
-      await startStripeCheckoutFromSelectedPlan()
-    } catch (err) {
-      if (onCheckout) {
-        onCheckout()
-      } else {
-        navigate('/onboarding/checkout')
+    for (let i = 0; i < 12; i++) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) {
+        try {
+          await startStripeCheckoutFromSelectedPlan()
+          return
+        } catch (err) {
+          setError(err.message || 'Impossible de démarrer le paiement.')
+          if (onCheckout) onCheckout()
+          else navigate('/onboarding/pricing')
+          return
+        }
       }
+      await new Promise((r) => setTimeout(r, 500))
     }
+    setError('Confirme ton email ou reconnecte-toi pour continuer vers le paiement.')
   }
 
   const handleSubmit = async (e) => {

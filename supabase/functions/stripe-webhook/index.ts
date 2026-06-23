@@ -30,6 +30,31 @@ async function resolveUserId(
   return data?.user_id ?? null
 }
 
+async function isEventProcessed(
+  supabase: ReturnType<typeof createClient>,
+  eventId: string,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from('stripe_processed_events')
+    .select('id')
+    .eq('id', eventId)
+    .maybeSingle()
+  return !!data
+}
+
+async function markEventProcessed(
+  supabase: ReturnType<typeof createClient>,
+  eventId: string,
+  eventType: string,
+  userId?: string | null,
+) {
+  await supabase.from('stripe_processed_events').insert({
+    id: eventId,
+    event_type: eventType,
+    user_id: userId ?? null,
+  })
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -58,6 +83,12 @@ serve(async (req) => {
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   )
+
+  if (await isEventProcessed(supabase, event.id)) {
+    return new Response(JSON.stringify({ received: true, duplicate: true }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
@@ -114,6 +145,8 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
+
+    await markEventProcessed(supabase, event.id, event.type, userId)
   }
 
   if (event.type === 'invoice.payment_succeeded') {
@@ -164,6 +197,8 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
+
+    await markEventProcessed(supabase, event.id, event.type, userId)
   }
 
   if (event.type === 'customer.subscription.deleted') {
@@ -175,6 +210,7 @@ serve(async (req) => {
         .update({ status: 'canceled' })
         .eq('user_id', userId)
         .eq('stripe_subscription_id', subscription.id)
+      await markEventProcessed(supabase, event.id, event.type, userId)
     }
   }
 

@@ -184,10 +184,11 @@ export default function RecommendationChat({ open, onClose, onSelect: externalOn
         occasion,
         occasionLabel: t(`emma.occasions.${occasion}`),
         outfitPhoto,
-      })
+      }, vizId)
 
       if (vizId && result.resultImage) {
         await completeVisualization(vizId, result.resultImage)
+        result.id = vizId
       }
 
       onClose()

@@ -16,16 +16,18 @@ export function CreditProvider({ children }) {
 
   const credits = profile?.credits ?? localCredits
   const isSubscribed = subscription?.status === 'active'
+    && (!subscription.current_period_end || new Date(subscription.current_period_end) > new Date())
   const hasEmmaAccess = isSubscribed && subscription?.plan === 'exclusif_ia'
 
   const fetchHistory = useCallback(async () => {
-    if (!user) return
+    if (!user) return []
     const { data } = await supabase
       .from('visualizations')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
     if (data) setHistory(data)
+    return data || []
   }, [user])
 
   const fetchPurchases = useCallback(async () => {
@@ -39,7 +41,7 @@ export function CreditProvider({ children }) {
   }, [user])
 
   const fetchSubscription = useCallback(async () => {
-    if (!user) return
+    if (!user) return null
     const { data } = await supabase
       .from('subscriptions')
       .select('*')
@@ -47,7 +49,21 @@ export function CreditProvider({ children }) {
       .eq('status', 'active')
       .maybeSingle()
     setSubscription(data || null)
+    return data
   }, [user])
+
+  const waitForActiveSubscription = useCallback(async (maxAttempts = 20) => {
+    if (!user) return null
+    for (let i = 0; i < maxAttempts; i++) {
+      const sub = await fetchSubscription()
+      if (sub?.status === 'active'
+        && (!sub.current_period_end || new Date(sub.current_period_end) > new Date())) {
+        return sub
+      }
+      await new Promise((r) => setTimeout(r, 1500))
+    }
+    return null
+  }, [user, fetchSubscription])
 
   useEffect(() => {
     fetchHistory()
@@ -111,7 +127,11 @@ export function CreditProvider({ children }) {
   }, [user, fetchHistory])
 
   const addToHistory = useCallback((result) => {
-    setHistory((h) => [result, ...h])
+    if (!result?.id) return
+    setHistory((h) => {
+      if (h.some((item) => item.id === result.id)) return h
+      return [result, ...h]
+    })
   }, [])
 
   const uploadImage = useCallback(async (file) => {
@@ -194,6 +214,7 @@ export function CreditProvider({ children }) {
       fetchHistory,
       fetchPurchases,
       fetchSubscription,
+      waitForActiveSubscription,
     }}>
       {children}
     </CreditContext.Provider>

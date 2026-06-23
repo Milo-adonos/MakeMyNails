@@ -3,6 +3,7 @@ import { supabase } from './supabase'
 
 const SELECTED_PLAN_KEY = 'selected_plan'
 const RESULT_KEY = 'funnel_pending_result'
+const STEP_KEY = 'funnel_step'
 
 export function setSelectedPlan(planId) {
   const value = planId === 'sub_exclusif_ia' ? 'exclusif_ia' : 'premium'
@@ -44,14 +45,48 @@ export function clearFunnelResult() {
   sessionStorage.removeItem(RESULT_KEY)
 }
 
+export function persistFunnelStep(step) {
+  if (step) sessionStorage.setItem(STEP_KEY, step)
+}
+
+export function getFunnelStep() {
+  return sessionStorage.getItem(STEP_KEY)
+}
+
+export function clearFunnelStep() {
+  sessionStorage.removeItem(STEP_KEY)
+}
+
 export function clearFunnelSession() {
   clearSelectedPlan()
   clearFunnelResult()
+  clearFunnelStep()
 }
 
 export function getPlanLabel(plan) {
   if (plan === 'exclusif_ia') return 'Exclusif IA — 14,99€/mois'
   if (plan === 'premium') return 'Premium — 9,99€/mois'
+  return null
+}
+
+export function isSubscriptionActive(subscription) {
+  if (!subscription || subscription.status !== 'active') return false
+  if (!subscription.current_period_end) return true
+  return new Date(subscription.current_period_end) > new Date()
+}
+
+export async function waitForActiveSubscription(userId, maxAttempts = 20) {
+  for (let i = 0; i < maxAttempts; i++) {
+    const { data } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .maybeSingle()
+
+    if (isSubscriptionActive(data)) return data
+    await new Promise((r) => setTimeout(r, 1500))
+  }
   return null
 }
 
@@ -63,6 +98,18 @@ export async function startStripeCheckoutFromSelectedPlan() {
   if (!session?.access_token) throw new Error('Non authentifiée')
 
   const url = await createCheckoutSession(stripePlanId, session.access_token)
-  clearSelectedPlan()
   window.location.href = url
+}
+
+export function mapVisualizationToResult(viz) {
+  if (!viz) return null
+  return {
+    id: viz.id,
+    originalImage: viz.original_image_url,
+    resultImage: viz.result_image_url,
+    shape: viz.shape,
+    style: viz.style,
+    length: viz.length,
+    createdAt: viz.created_at,
+  }
 }
