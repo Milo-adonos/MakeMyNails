@@ -4,6 +4,7 @@ import { useCredits } from '../../contexts/CreditContext'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { optimizeImageUrl } from '../../lib/supabase'
+import { ROUTES } from '../../lib/routes'
 
 export default function HistoryList({ limit }) {
   const { history } = useCredits()
@@ -38,7 +39,7 @@ export default function HistoryList({ limit }) {
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-heading text-xl font-semibold text-brown">{t('dashboard.historyTitle')}</h3>
         {limit && history.length > limit && (
-          <Link to="/app/history" className="text-sm text-brown-light/60 hover:text-brown flex items-center gap-1">
+          <Link to={ROUTES.dashboardHistory} className="text-sm text-brown-light/60 hover:text-brown flex items-center gap-1">
             {t('dashboard.historySeeAll')} <ChevronRight className="w-3 h-3" />
           </Link>
         )}
@@ -47,7 +48,7 @@ export default function HistoryList({ limit }) {
         {items.map((item) => (
           <Link
             key={item.id}
-            to={`/app/result/${item.id}`}
+            to={ROUTES.dashboardResult(item.id)}
             className="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-sm shadow-brown/5 hover:shadow-md transition-shadow"
           >
             <div className="w-14 h-14 bg-nude/30 rounded-xl overflow-hidden flex-shrink-0">

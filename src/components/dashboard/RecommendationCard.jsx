@@ -3,6 +3,7 @@ import { Sparkles, MessageCircle, Crown, Lock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCredits } from '../../contexts/CreditContext'
+import { ROUTES } from '../../lib/routes'
 
 export default function RecommendationCard({ onClick }) {
   const { hasEmmaAccess } = useCredits()
@@ -13,7 +14,7 @@ export default function RecommendationCard({ onClick }) {
     if (hasEmmaAccess) {
       onClick()
     } else {
-      navigate('/app/purchase')
+      navigate(ROUTES.dashboardPurchase)
     }
   }
 

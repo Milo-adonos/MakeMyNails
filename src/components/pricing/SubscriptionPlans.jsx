@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SUBSCRIPTIONS } from '../../lib/stripe'
 import Button from '../common/Button'
+import { ROUTES } from '../../lib/routes'
 
 import { LANDING_VIEWPORT } from '../../lib/motion'
 
@@ -94,7 +95,7 @@ export default function SubscriptionPlans({
                 {isLoading ? t('common.loading') : (ctaLabel || t('pricing.subscribe'))}
               </button>
             ) : (
-              <Link to="/onboarding">
+              <Link to={ROUTES.welcome}>
                 <Button variant={isPopular ? 'secondary' : 'outline'} className="w-full justify-center">
                   {ctaLabel || t('pricing.subscribe')}
                 </Button>

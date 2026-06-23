@@ -11,6 +11,7 @@ import {
   startStripeCheckoutFromSelectedPlan,
 } from '../../lib/funnelSession'
 import { isMaintenanceMode } from '../../lib/maintenance'
+import { ROUTES } from '../../lib/routes'
 
 export default function FunnelSignup({ onCheckout }) {
   const { signup } = useAuth()
@@ -33,7 +34,7 @@ export default function FunnelSignup({ onCheckout }) {
         } catch (err) {
           setError(err.message || 'Impossible de démarrer le paiement.')
           if (onCheckout) onCheckout()
-          else navigate('/onboarding/pricing')
+          else navigate(ROUTES.pricing)
           return
         }
       }
@@ -45,7 +46,7 @@ export default function FunnelSignup({ onCheckout }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!selectedPlan) {
-      navigate('/onboarding/pricing')
+      navigate(ROUTES.pricing)
       return
     }
     setError('')
@@ -66,7 +67,7 @@ export default function FunnelSignup({ onCheckout }) {
 
   const handleGoogleAuth = () => {
     if (!selectedPlan) {
-      navigate('/onboarding/pricing')
+      navigate(ROUTES.pricing)
     }
   }
 
@@ -145,7 +146,7 @@ export default function FunnelSignup({ onCheckout }) {
           <GoogleSignInButton onBeforeClick={handleGoogleAuth} disabled={!selectedPlan} />
 
           <Link
-            to={`/login?redirect=${encodeURIComponent('/onboarding/checkout')}&mode=login`}
+            to={`${ROUTES.login}?redirect=${encodeURIComponent(ROUTES.stripeCheckout)}&mode=login`}
             className="block text-center text-sm text-brown-light/60 mt-6 hover:text-brown transition-colors"
           >
             Déjà un compte ? Connexion

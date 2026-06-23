@@ -9,6 +9,7 @@ import Button from '../components/common/Button'
 import { optimizeImageUrl } from '../lib/supabase'
 import { getOriginalDisplayUrl } from '../lib/originalImage'
 import { saveImageToGallery } from '../lib/saveImage'
+import { ROUTES } from '../lib/routes'
 
 export default function Result() {
   const { id } = useParams()
@@ -50,7 +51,7 @@ export default function Result() {
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center py-20">
           <p className="text-brown-light/60">{t('result.notFound')}</p>
-          <Button onClick={() => navigate('/')} className="mt-4">
+          <Button onClick={() => navigate(ROUTES.landing)} className="mt-4">
             {t('result.backHome')}
           </Button>
         </div>
@@ -283,7 +284,7 @@ export default function Result() {
   return (
     <div className="app-shell bg-gradient-to-b from-offwhite to-nude-light/20 px-4">
       <div className="max-w-lg mx-auto">
-        <button onClick={() => navigate('/app')} className="flex items-center gap-2 text-brown-light/60 hover:text-brown transition-colors mb-6">
+        <button onClick={() => navigate(ROUTES.dashboard)} className="flex items-center gap-2 text-brown-light/60 hover:text-brown transition-colors mb-6">
           <ArrowLeft className="w-4 h-4" />
           <span className="text-sm">{t('result.back')}</span>
         </button>
@@ -361,7 +362,7 @@ export default function Result() {
           </div>
           {saveError && <p className="text-xs text-red-500 text-center">{saveError}</p>}
 
-          <Button onClick={() => navigate(isAuthenticated ? '/app' : '/onboarding')} className="w-full flex items-center justify-center gap-2">
+          <Button onClick={() => navigate(isAuthenticated ? ROUTES.dashboard : ROUTES.welcome)} className="w-full flex items-center justify-center gap-2">
             <RotateCcw className="w-4 h-4" />
             {t('result.tryAnother')}
           </Button>

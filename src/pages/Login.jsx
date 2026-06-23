@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { getSelectedPlan, startStripeCheckoutFromSelectedPlan } from '../lib/funnelSession'
 import GoogleSignInButton from '../components/auth/GoogleSignInButton'
 import { isMaintenanceMode } from '../lib/maintenance'
+import { ROUTES } from '../lib/routes'
 
 export default function Login() {
   const { t } = useTranslation()
@@ -15,7 +16,7 @@ export default function Login() {
   const location = useLocation()
   const handledByForm = useRef(false)
 
-  const redirect = new URLSearchParams(location.search).get('redirect') || '/app'
+  const redirect = new URLSearchParams(location.search).get('redirect') || ROUTES.dashboard
   const defaultMode = new URLSearchParams(location.search).get('mode') || 'login'
   const [mode, setMode] = useState(defaultMode)
   const [email, setEmail] = useState('')
@@ -31,11 +32,11 @@ export default function Login() {
         await startStripeCheckoutFromSelectedPlan()
         return
       } catch {
-        navigate('/onboarding/pricing', { replace: true })
+        navigate(ROUTES.pricing, { replace: true })
         return
       }
     }
-    navigate(redirect === '/' ? '/app' : redirect, { replace: true })
+    navigate(redirect === '/' ? ROUTES.dashboard : redirect, { replace: true })
   }
 
   useEffect(() => {
@@ -72,7 +73,7 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-b from-offwhite to-nude-light/30 flex flex-col">
       {/* Header */}
       <div className="px-4 pt-6 pb-2">
-        <Link to="/" className="inline-flex items-center gap-2 text-brown-light/60 hover:text-brown transition-colors">
+        <Link to={ROUTES.landing} className="inline-flex items-center gap-2 text-brown-light/60 hover:text-brown transition-colors">
           <ArrowLeft className="w-4 h-4" />
           <span className="text-sm">{t('auth.back')}</span>
         </Link>
@@ -87,7 +88,7 @@ export default function Login() {
         >
           {/* Logo */}
           <div className="text-center mb-8">
-            <Link to="/">
+            <Link to={ROUTES.landing}>
               <img src="/logo.webp" alt="MakeMyNails" className="w-16 h-16 rounded-2xl object-cover mx-auto mb-4 shadow-lg shadow-nude-dark/20" />
             </Link>
             <h1 className="font-heading text-3xl font-bold text-brown mb-1">

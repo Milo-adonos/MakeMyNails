@@ -5,6 +5,7 @@ import {
   getSelectedPlan,
   startStripeCheckoutFromSelectedPlan,
 } from '../lib/funnelSession'
+import { ROUTES } from '../lib/routes'
 
 export default function AuthCallback() {
   const navigate = useNavigate()
@@ -25,12 +26,12 @@ export default function AuthCallback() {
           await startStripeCheckoutFromSelectedPlan()
         } catch (err) {
           console.error(err)
-          navigate('/onboarding/pricing', { replace: true })
+          navigate(ROUTES.pricing, { replace: true })
         }
         return
       }
 
-      navigate('/app', { replace: true })
+      navigate(ROUTES.dashboard, { replace: true })
     }
 
     run()

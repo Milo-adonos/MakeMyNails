@@ -3,6 +3,7 @@ import { User, Home, History, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCredits } from '../../contexts/CreditContext'
+import { ROUTES } from '../../lib/routes'
 
 export default function Navbar() {
   const { t } = useTranslation()
@@ -10,24 +11,24 @@ export default function Navbar() {
   const { credits, isSubscribed } = useCredits()
   const location = useLocation()
 
-  const isApp = location.pathname.startsWith('/app')
+  const isApp = location.pathname.startsWith(ROUTES.dashboard)
 
   if (!isApp) return null
 
   const links = [
-    { to: '/app', icon: Home, label: t('appNav.home') },
-    { to: '/app/history', icon: History, label: t('appNav.history') },
-    { to: '/app/profile', icon: User, label: t('appNav.profile') },
+    { to: ROUTES.dashboard, icon: Home, label: t('appNav.home') },
+    { to: ROUTES.dashboardHistory, icon: History, label: t('appNav.history') },
+    { to: ROUTES.dashboardProfile, icon: User, label: t('appNav.profile') },
   ]
 
   const creditsDisplay = isSubscribed ? '∞' : credits
-  const creditsLink = isSubscribed ? '/app/profile' : '/app/purchase'
+  const creditsLink = isSubscribed ? ROUTES.dashboardProfile : ROUTES.dashboardPurchase
 
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 glass-strong">
         <div className="max-w-lg mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/app" className="flex items-center gap-2">
+          <Link to={ROUTES.dashboard} className="flex items-center gap-2">
             <img src="/logo.webp" alt="MakeMyNails" className="w-8 h-8 rounded-xl object-cover" />
             <span className="font-heading text-xl font-semibold text-brown">MakeMyNails</span>
           </Link>

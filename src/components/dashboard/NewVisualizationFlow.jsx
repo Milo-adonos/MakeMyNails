@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import Button from '../common/Button'
 import { generateNailVisualization } from '../../lib/api'
 import { useCredits } from '../../contexts/CreditContext'
+import { ROUTES } from '../../lib/routes'
 
 const shapeIds = ['almond', 'square', 'stiletto', 'coffin', 'oval', 'ballerina']
 const styleIds = ['french', 'color', 'nailart', 'gradient', 'minimalist', 'chrome']
@@ -49,7 +50,7 @@ export default function NewVisualizationFlow({ open, onClose }) {
 
   const handleGenerate = useCallback(async () => {
     if (!canGenerate()) {
-      navigate('/app/purchase')
+      navigate(ROUTES.dashboardPurchase)
       return
     }
 
@@ -80,7 +81,7 @@ export default function NewVisualizationFlow({ open, onClose }) {
 
       clearInterval(msgInterval)
       onClose()
-      navigate('/result', { state: { result, locked: false } })
+      navigate(ROUTES.result, { state: { result, locked: false } })
     } catch (err) {
       clearInterval(msgInterval)
       console.error(err)

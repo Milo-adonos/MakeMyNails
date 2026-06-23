@@ -3,6 +3,7 @@ import { Plus, Crown } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCredits } from '../../contexts/CreditContext'
+import { ROUTES } from '../../lib/routes'
 
 export default function CreditCounter() {
   const { credits, isSubscribed, subscription } = useCredits()
@@ -50,7 +51,7 @@ export default function CreditCounter() {
         </div>
       </div>
       <Link
-        to="/app/purchase"
+        to={ROUTES.dashboardPurchase}
         className="mt-4 flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 transition-colors py-2.5 rounded-xl text-sm font-medium"
       >
         {isSubscribed ? (

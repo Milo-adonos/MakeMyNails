@@ -10,6 +10,7 @@ import { useCredits } from '../contexts/CreditContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { getOriginalDisplayUrl, resolveOriginalImageUrl } from '../lib/originalImage'
+import { ROUTES } from '../lib/routes'
 import {
   getFunnelResult,
   clearFunnelResult,
@@ -183,7 +184,7 @@ export default function Dashboard() {
 
   const handleViewDesign = () => {
     if (!unlockedResult) return
-    navigate(`/app/result/${unlockedResult.id}`, { state: { result: unlockedResult } })
+    navigate(ROUTES.dashboardResult(unlockedResult.id), { state: { result: unlockedResult } })
   }
 
   return (

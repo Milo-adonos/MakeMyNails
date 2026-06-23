@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useCredits } from '../../contexts/CreditContext'
 import { setSelectedPlan } from '../../lib/funnelSession'
 import SubscriptionPlans from '../pricing/SubscriptionPlans'
+import { ROUTES } from '../../lib/routes'
 
 export default function FunnelPricing({ onGoSignup }) {
   const [designCount, setDesignCount] = useState(1247)
@@ -27,7 +28,7 @@ export default function FunnelPricing({ onGoSignup }) {
       if (onGoSignup) {
         onGoSignup()
       } else {
-        navigate('/onboarding/signup')
+        navigate(ROUTES.signup)
       }
       return
     }

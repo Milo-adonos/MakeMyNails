@@ -18,6 +18,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useCredits } from '../contexts/CreditContext'
 import { persistFunnelResult, getFunnelResult, persistFunnelStep, getFunnelStep } from '../lib/funnelSession'
 import { createBlurredPreview } from '../lib/previewImage'
+import { FUNNEL_STEP_PATH, ROUTES, funnelStepFromPath } from '../lib/routes'
 
 const INSPO_DEFAULTS = { shape: 'oval', style: 'nailart', length: 'medium' }
 
@@ -43,14 +44,11 @@ export default function Onboarding() {
   const { createVisualization, completeVisualization, uploadBlobUrl, isSubscribed } = useCredits()
   const generationRef = useRef(null)
   const preselectHandled = useRef(false)
+  const restoredRef = useRef(false)
 
   const [step, setStep] = useState(() => {
     if (typeof window === 'undefined') return 'welcome'
-    const path = window.location.pathname
-    if (path === '/onboarding/pricing') return 'pricing'
-    if (path === '/onboarding/signup') return 'signup'
-    if (path === '/onboarding/checkout') return 'checkout'
-    return getFunnelStep() || 'welcome'
+    return funnelStepFromPath(window.location.pathname) || getFunnelStep() || 'welcome'
   })
   const [result, setResult] = useState(null)
   const [generationError, setGenerationError] = useState(null)
@@ -66,40 +64,43 @@ export default function Onboarding() {
     outfitPhoto: null,
   })
 
-  useEffect(() => {
-    if (location.pathname === '/onboarding/pricing') {
-      setStep('pricing')
-    } else if (location.pathname === '/onboarding/signup') {
-      setStep('signup')
-    } else if (location.pathname === '/onboarding/checkout') {
-      setStep('checkout')
+  const goTo = useCallback((nextStep, { replace = false } = {}) => {
+    setStep(nextStep)
+    const path = FUNNEL_STEP_PATH[nextStep]
+    if (path && path !== window.location.pathname) {
+      navigate(path, { replace })
     }
+    if (['result', 'pricing', 'signup', 'checkout', 'processing'].includes(nextStep)) {
+      persistFunnelStep(nextStep)
+    }
+  }, [navigate])
+
+  useEffect(() => {
+    const fromPath = funnelStepFromPath(location.pathname)
+    if (fromPath) setStep(fromPath)
   }, [location.pathname])
 
   useEffect(() => {
+    if (restoredRef.current) return
+    restoredRef.current = true
+
     const saved = getFunnelResult()
-    if (saved && !result) {
-      setResult(saved)
-      const savedStep = getFunnelStep()
-      if (savedStep === 'result' || savedStep === 'pricing' || savedStep === 'signup') {
-        setStep(savedStep)
-      } else {
-        setStep('result')
-        persistFunnelStep('result')
-      }
-    }
-  }, [])
+    if (!saved) return
+
+    setResult(saved)
+    const fromPath = funnelStepFromPath(location.pathname)
+    if (fromPath === 'result' || fromPath === 'pricing' || fromPath === 'signup') return
+
+    const savedStep = getFunnelStep()
+    const targetStep = ['result', 'pricing', 'signup'].includes(savedStep) ? savedStep : 'result'
+    setStep(targetStep)
+    persistFunnelStep(targetStep)
+    navigate(FUNNEL_STEP_PATH[targetStep], { replace: true })
+  }, [location.pathname, navigate])
 
   useEffect(() => {
     if (result) persistFunnelResult(result)
   }, [result])
-
-  const goTo = (nextStep) => {
-    setStep(nextStep)
-    if (['result', 'pricing', 'signup', 'checkout', 'processing'].includes(nextStep)) {
-      persistFunnelStep(nextStep)
-    }
-  }
 
   const runGeneration = useCallback(async (genData) => {
     let vizId = null
@@ -143,7 +144,7 @@ export default function Onboarding() {
         throw err
       })
     goTo('processing')
-  }, [runGeneration])
+  }, [runGeneration, goTo])
 
   useEffect(() => {
     if (preselectHandled.current) return
@@ -166,7 +167,7 @@ export default function Onboarding() {
     } else if (newData.photo) {
       goTo('inspiration')
     }
-  }, [location.state, enterProcessing])
+  }, [location.state, enterProcessing, goTo])
 
   useEffect(() => {
     if (step !== 'processing' || !generationRef.current) return
@@ -182,7 +183,7 @@ export default function Onboarding() {
       })
 
     return () => { cancelled = true }
-  }, [step])
+  }, [step, goTo])
 
   const handleInspirationNext = (inspirationUrl) => {
     if (inspirationUrl) {
@@ -210,21 +211,10 @@ export default function Onboarding() {
 
   const handleUnlock = () => {
     if (isAuthenticated && isSubscribed) {
-      navigate('/app', { state: { result, unlocked: true } })
+      navigate(ROUTES.dashboard, { state: { result, unlocked: true } })
       return
     }
-    goTo('pricing')
-    navigate('/onboarding/pricing', { replace: true })
-  }
-
-  const goToSignup = () => {
-    goTo('signup')
-    navigate('/onboarding/signup')
-  }
-
-  const goToCheckout = () => {
-    goTo('checkout')
-    navigate('/onboarding/checkout')
+    goTo('pricing', { replace: true })
   }
 
   const showProgress = ['photo', 'inspiration', 'shape', 'style', 'length'].includes(step)
@@ -320,9 +310,9 @@ export default function Onboarding() {
       case 'result':
         return <BlurredResult result={result} onUnlock={handleUnlock} />
       case 'signup':
-        return <FunnelSignup onCheckout={goToCheckout} />
+        return <FunnelSignup onCheckout={() => goTo('checkout')} />
       case 'pricing':
-        return <FunnelPricing onGoSignup={goToSignup} />
+        return <FunnelPricing onGoSignup={() => goTo('signup')} />
       case 'checkout':
         return <FunnelCheckout />
       default:

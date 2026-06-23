@@ -6,6 +6,7 @@ import {
   startStripeCheckoutFromSelectedPlan,
 } from '../../lib/funnelSession'
 import Processing from './Processing'
+import { ROUTES } from '../../lib/routes'
 
 export default function FunnelCheckout() {
   const navigate = useNavigate()
@@ -14,12 +15,12 @@ export default function FunnelCheckout() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate('/onboarding/signup', { replace: true })
+      navigate(ROUTES.signup, { replace: true })
       return
     }
 
     if (!getSelectedPlan()) {
-      navigate('/onboarding/pricing', { replace: true })
+      navigate(ROUTES.pricing, { replace: true })
       return
     }
 
@@ -29,7 +30,7 @@ export default function FunnelCheckout() {
     startStripeCheckoutFromSelectedPlan().catch((err) => {
       console.error(err)
       alert('Erreur: ' + (err?.message || 'Paiement impossible'))
-      navigate('/onboarding/pricing', { replace: true })
+      navigate(ROUTES.pricing, { replace: true })
     })
   }, [isAuthenticated, navigate])
 

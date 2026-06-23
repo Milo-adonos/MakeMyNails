@@ -11,6 +11,7 @@ import {
   clearFunnelSession,
   mapVisualizationToResult,
 } from '../lib/funnelSession'
+import { ROUTES } from '../lib/routes'
 
 export default function PurchaseSuccess() {
   const navigate = useNavigate()
@@ -55,7 +56,7 @@ export default function PurchaseSuccess() {
       clearFunnelSession()
       setStatus('success')
 
-      navigate('/app', {
+      navigate(ROUTES.dashboard, {
         replace: true,
         state: result ? { result, unlocked: true } : undefined,
       })
@@ -70,7 +71,7 @@ export default function PurchaseSuccess() {
       <div className="min-h-screen flex items-center justify-center px-6">
         <div className="text-center max-w-sm">
           <p className="text-brown-light/70 mb-4">Session de paiement invalide.</p>
-          <Button onClick={() => navigate('/app/purchase')} className="w-full">
+          <Button onClick={() => navigate(ROUTES.dashboardPurchase)} className="w-full">
             Retour aux abonnements
           </Button>
         </div>
@@ -85,7 +86,7 @@ export default function PurchaseSuccess() {
           <p className="text-brown-light/70 mb-4">
             Paiement reçu — activation en cours. Rafraîchis dans quelques secondes.
           </p>
-          <Button onClick={() => navigate('/app')} className="w-full">
+          <Button onClick={() => navigate(ROUTES.dashboard)} className="w-full">
             Aller au dashboard
           </Button>
         </div>

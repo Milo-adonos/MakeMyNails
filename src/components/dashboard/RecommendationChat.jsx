@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { generateNailVisualization } from '../../lib/api'
 import { useCredits } from '../../contexts/CreditContext'
 import Processing from '../onboarding/Processing'
+import { ROUTES } from '../../lib/routes'
 
 const occasionKeys = ['wedding', 'work', 'party', 'vacation', 'date', 'everyday', 'other']
 const occasionIcons = {
@@ -160,7 +161,7 @@ export default function RecommendationChat({ open, onClose, onSelect: externalOn
     if (!photo || !occasion) return
     if (!canGenerate()) {
       onClose()
-      navigate('/app/purchase')
+      navigate(ROUTES.dashboardPurchase)
       return
     }
 
@@ -192,7 +193,7 @@ export default function RecommendationChat({ open, onClose, onSelect: externalOn
       }
 
       onClose()
-      navigate('/result', { state: { result, locked: false } })
+      navigate(ROUTES.result, { state: { result, locked: false } })
     } catch (err) {
       setGenerationError(err.message || t('common.error'))
       setGenerating(false)
@@ -204,7 +205,7 @@ export default function RecommendationChat({ open, onClose, onSelect: externalOn
     if (externalOnSelect) {
       externalOnSelect({ ...reco, photo, outfitPhoto })
     } else {
-      navigate('/onboarding', {
+      navigate(ROUTES.welcome, {
         state: {
           preselectedShape: reco.shape,
           preselectedStyle: reco.style,

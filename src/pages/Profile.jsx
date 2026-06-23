@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { createPortalSession } from '../lib/stripe'
 import Button from '../components/common/Button'
+import { ROUTES } from '../lib/routes'
 
 export default function Profile() {
   const { t, i18n } = useTranslation()
@@ -49,7 +50,7 @@ export default function Profile() {
 
   const handleLogout = async () => {
     await logout()
-    navigate('/')
+    navigate(ROUTES.landing)
   }
 
   const openSubscriptionPortal = async () => {
@@ -164,7 +165,7 @@ export default function Profile() {
               </div>
             </div>
             {!isSubscribed && (
-              <Link to="/app/purchase" className="text-sm text-beige-dark font-medium hover:text-brown transition-colors">
+              <Link to={ROUTES.dashboardPurchase} className="text-sm text-beige-dark font-medium hover:text-brown transition-colors">
                 {t('profilePage.getMore')}
               </Link>
             )}

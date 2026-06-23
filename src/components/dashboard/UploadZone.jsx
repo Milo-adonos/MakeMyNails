@@ -3,6 +3,7 @@ import { Plus, AlertCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCredits } from '../../contexts/CreditContext'
+import { ROUTES } from '../../lib/routes'
 
 export default function UploadZone({ onStart }) {
   const { canGenerate } = useCredits()
@@ -39,7 +40,7 @@ export default function UploadZone({ onStart }) {
             </div>
             <p className="text-sm font-medium text-brown mb-1">{t('dashboard.noCredits')}</p>
             <Link
-              to="/app/purchase"
+              to={ROUTES.dashboardPurchase}
               className="inline-flex items-center gap-2 bg-brown text-offwhite px-6 py-3 rounded-2xl font-medium text-sm hover:bg-brown-light transition-colors mt-4"
             >
               {t('dashboard.buyCredits')}

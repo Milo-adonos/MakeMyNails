@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useCredits } from '../contexts/CreditContext'
 import { useAuth } from '../contexts/AuthContext'
 import SubscriptionPlans from '../components/pricing/SubscriptionPlans'
+import { ROUTES } from '../lib/routes'
 
 export default function Purchase() {
   const { t } = useTranslation()
@@ -16,7 +17,7 @@ export default function Purchase() {
 
   const handleSubscribe = async (planId) => {
     if (!isAuthenticated) {
-      navigate('/login?redirect=/app/purchase')
+      navigate(`${ROUTES.login}?redirect=${ROUTES.dashboardPurchase}`)
       return
     }
 

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { ROUTES } from '../../lib/routes'
 
 const inspirations = [
   {
@@ -52,7 +53,7 @@ export default function StyleGrid() {
   const navigate = useNavigate()
 
   const handleClick = (item) => {
-    navigate('/onboarding', { state: { preselectedStyle: item.style } })
+    navigate(ROUTES.welcome, { state: { preselectedStyle: item.style } })
   }
 
   return (

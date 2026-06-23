@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Button from '../common/Button'
+import { ROUTES } from '../../lib/routes'
 
 export default function Hero() {
   const { t } = useTranslation()
@@ -58,7 +59,7 @@ export default function Hero() {
             </p>
 
             <div className="flex justify-center md:justify-start">
-              <Link to="/onboarding">
+              <Link to={ROUTES.welcome}>
                 <Button size="lg" className="flex items-center gap-2">
                   {t('hero.cta')}
                   <ArrowRight className="w-5 h-5" />

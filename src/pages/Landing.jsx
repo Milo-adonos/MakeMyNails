@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { normalizeLocale } from '../lib/locale'
 import Hero from '../components/landing/Hero'
 import Footer from '../components/layout/Footer'
+import { ROUTES } from '../lib/routes'
 
 const Steps = lazy(() => import('../components/landing/Steps'))
 const EmmaSection = lazy(() => import('../components/landing/EmmaSection'))
@@ -51,7 +52,7 @@ export default function Landing() {
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
             <Link
-              to="/login"
+              to={ROUTES.login}
               className="bg-brown text-offwhite px-5 py-2 rounded-xl text-sm font-medium hover:bg-brown-light transition-colors"
             >
               {t('nav.login')}
