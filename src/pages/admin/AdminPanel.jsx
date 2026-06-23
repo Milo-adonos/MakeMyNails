@@ -216,6 +216,11 @@ export default function AdminPanel() {
                 sub={subDelta >= 0 ? `+${subDelta} vs mois précédent` : `${subDelta} vs mois précédent`}
               />
               <StatCard
+                label="Nouvelles inscriptions (30j)"
+                value={overview.newUsers30}
+                sub={`${overview.newUsers30 - overview.newUsersPrev >= 0 ? '+' : ''}${overview.newUsers30 - overview.newUsersPrev} vs mois précédent`}
+              />
+              <StatCard
                 label="Churn (30j)"
                 value={fmtPct(overview.churnPct)}
                 sub={`${overview.churnCount} annulation(s)`}
@@ -331,7 +336,7 @@ export default function AdminPanel() {
                     </td>
                     <td className="p-3 text-xs">{log.user_email || '—'}</td>
                     <td className="p-3 max-w-xs truncate text-xs text-brown-light/70" title={log.prompt}>{log.prompt}</td>
-                    <td className="p-3 text-xs capitalize">{log.mode} · {log.shape || '—'}</td>
+                    <td className="p-3 text-xs capitalize">{log.format || `${log.mode} · ${log.aspect_ratio || '—'}`}</td>
                     <td className="p-3 text-xs text-brown-light/60">{fmtDate(log.created_at)}</td>
                     <td className="p-3">{fmt(log.estimated_cost_eur)}</td>
                   </tr>
@@ -355,6 +360,7 @@ export default function AdminPanel() {
                 <thead>
                   <tr className="border-b border-nude/20 text-left text-xs text-brown-light/60 uppercase">
                     <th className="p-3">Date</th>
+                    <th className="p-3">Email</th>
                     <th className="p-3">Type</th>
                     <th className="p-3">Plan</th>
                     <th className="p-3">Montant</th>
@@ -364,6 +370,7 @@ export default function AdminPanel() {
                   {finances.payments.map((p) => (
                     <tr key={p.id} className="border-b border-nude/10">
                       <td className="p-3 text-xs">{fmtDate(p.created_at)}</td>
+                      <td className="p-3 text-xs">{p.user_email || '—'}</td>
                       <td className="p-3 text-xs">{p.event_type}</td>
                       <td className="p-3">{p.plan || '—'}</td>
                       <td className="p-3 font-medium">{fmt(p.amount_eur)}</td>
@@ -428,17 +435,36 @@ export default function AdminPanel() {
               </button>
               {saveMsg && <p className="text-xs text-center text-brown-light/60">{saveMsg}</p>}
             </div>
-            <div className="bg-white rounded-2xl p-6 border border-nude/30 shadow-sm">
-              <p className="text-sm text-brown mb-1">
-                Annulations (hors panel admin) : <strong>{settings.cancellationCount}</strong>
-              </p>
-              <button
-                type="button"
-                onClick={() => adminApi.resetChurn().then(load)}
-                className="mt-3 text-xs text-brown-light/50 hover:text-brown underline"
-              >
-                Réinitialiser le compteur churn
-              </button>
+            <div className="bg-white rounded-2xl p-6 border border-nude/30 shadow-sm space-y-4">
+              <div>
+                <p className="text-sm font-semibold text-brown mb-2">Remise à zéro des compteurs</p>
+                <p className="text-xs text-brown-light/50 mb-3">
+                  Efface générations, paiements, annulations et connexions loguées. Les utilisateurs et abonnements ne sont pas touchés.
+                </p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!window.confirm('Réinitialiser tous les compteurs et stats du dashboard ?')) return
+                    await adminApi.resetStats()
+                    load()
+                  }}
+                  className="w-full border border-red-200 text-red-500 py-3 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors"
+                >
+                  Réinitialiser tous les compteurs
+                </button>
+              </div>
+              <div className="border-t border-nude/20 pt-4">
+                <p className="text-sm text-brown mb-1">
+                  Annulations churn (30j) : <strong>{settings.cancellationCount}</strong>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => adminApi.resetChurn().then(load)}
+                  className="mt-3 text-xs text-brown-light/50 hover:text-brown underline"
+                >
+                  Réinitialiser le compteur churn uniquement
+                </button>
+              </div>
             </div>
           </div>
         )}

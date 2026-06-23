@@ -74,6 +74,19 @@ function buildPrompt(
   return buildOnboardingPrompt(shape, style)
 }
 
+function buildFormat(
+  mode: string,
+  aspectRatio: string,
+  shape?: string,
+  style?: string,
+  length?: string,
+): string {
+  if (mode === 'onboarding' && shape && style && length) {
+    return `${mode} · ${shape}/${style}/${length} · ${aspectRatio}`
+  }
+  return `${mode} · ${aspectRatio}`
+}
+
 function toDataUri(base64: string): string {
   if (base64.startsWith('data:')) return base64
   return `data:image/jpeg;base64,${base64}`
@@ -184,6 +197,7 @@ serve(async (req) => {
   )
 
   const started = Date.now()
+  let pendingLog: Record<string, unknown> | null = null
 
   try {
     const falKey = Deno.env.get('FAL_KEY')
@@ -236,9 +250,11 @@ serve(async (req) => {
       length: length || null,
       custom_note: customNote || null,
       aspect_ratio: aspectRatio,
+      format: buildFormat(mode, aspectRatio, shape, style, length),
       estimated_cost_eur: costEur,
       source: source || mode,
     }
+    pendingLog = logBase
 
     if (!photoBase64) {
       return new Response(JSON.stringify({ error: 'Missing hand photo' }), {
@@ -299,9 +315,10 @@ serve(async (req) => {
     )
   } catch (err) {
     await logGeneration(supabase, {
-      user_id: null,
-      mode: 'unknown',
+      ...(pendingLog || {}),
+      mode: pendingLog?.mode || 'unknown',
       prompt: '—',
+      format: pendingLog?.format || '—',
       status: 'failed',
       error_message: err.message,
       estimated_cost_eur: 0,

@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { logUserLogin } from '../lib/logLogin'
 
 const AuthContext = createContext(null)
 
@@ -7,6 +8,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const loginLogged = useRef(false)
 
   const fetchProfile = useCallback(async (userId) => {
     const { data } = await supabase
@@ -25,12 +27,17 @@ export function AuthProvider({ children }) {
       setLoading(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null)
       if (session?.user) {
         fetchProfile(session.user.id)
+        if (event === 'SIGNED_IN' && session.access_token && !loginLogged.current) {
+          loginLogged.current = true
+          logUserLogin(session.access_token)
+        }
       } else {
         setProfile(null)
+        loginLogged.current = false
       }
     })
 

@@ -82,22 +82,26 @@ async function fetchOverview(supabase: ReturnType<typeof createClient>) {
   const churnReset = await getSetting(supabase, 'churn_reset_at')
   const churnSince = churnReset && churnReset !== 'null' ? String(churnReset) : d30
 
-  const [{ data: payments30 }, { data: paymentsPrev }, { data: gens30 }, { data: gensDaily }, { data: activeSubs }, { data: allSubs }, { data: newSubs30 }, { data: newSubsPrev }, { data: cancellations }, { data: adminCancels }] = await Promise.all([
+  const [{ data: payments30 }, { data: paymentsPrev }, { data: gens30 }, { data: gensDaily }, { data: activeSubs }, { data: allSubs }, { data: newSubs30 }, { data: newSubsPrev }, { data: newUsers30 }, { data: newUsersPrev }, { data: cancellations }, { data: adminCancels }] = await Promise.all([
     supabase.from('payment_events').select('amount_eur, created_at').gte('created_at', d30),
     supabase.from('payment_events').select('amount_eur').gte('created_at', d60).lt('created_at', d30),
-    supabase.from('generation_logs').select('estimated_cost_eur, created_at').gte('created_at', d30),
-    supabase.from('generation_logs').select('created_at').gte('created_at', d30),
+    supabase.from('generation_logs').select('estimated_cost_eur, created_at, status').gte('created_at', d30),
+    supabase.from('generation_logs').select('created_at, status').gte('created_at', d30).eq('status', 'success'),
     supabase.from('subscriptions').select('id').eq('status', 'active'),
     supabase.from('subscriptions').select('id, status'),
     supabase.from('subscriptions').select('id').gte('created_at', d30),
     supabase.from('subscriptions').select('id').gte('created_at', d60).lt('created_at', d30),
+    supabase.from('profiles').select('id').gte('created_at', d30),
+    supabase.from('profiles').select('id').gte('created_at', d60).lt('created_at', d30),
     supabase.from('subscription_cancellations').select('id, excluded_from_churn').gte('canceled_at', churnSince),
     supabase.from('subscription_cancellations').select('id').gte('canceled_at', churnSince).eq('excluded_from_churn', true),
   ])
 
   const revenue30 = (payments30 || []).reduce((s, p) => s + Number(p.amount_eur), 0)
   const revenuePrev = (paymentsPrev || []).reduce((s, p) => s + Number(p.amount_eur), 0)
-  const aiCost30 = (gens30 || []).reduce((s, g) => s + Number(g.estimated_cost_eur), 0)
+  const aiCost30 = (gens30 || [])
+    .filter((g) => g.status === 'success')
+    .reduce((s, g) => s + Number(g.estimated_cost_eur), 0)
   const netProfit = revenue30 - aiCost30
   const marginPct = revenue30 > 0 ? (netProfit / revenue30) * 100 : 0
 
@@ -133,6 +137,8 @@ async function fetchOverview(supabase: ReturnType<typeof createClient>) {
     totalSubscribers: allSubs?.length || 0,
     newSubs30: newSubs30?.length || 0,
     newSubsPrev: newSubsPrev?.length || 0,
+    newUsers30: newUsers30?.length || 0,
+    newUsersPrev: newUsersPrev?.length || 0,
     churnPct,
     churnCount,
     adminCancelCount: adminCancels?.length || 0,
@@ -147,7 +153,7 @@ async function fetchUsers(supabase: ReturnType<typeof createClient>, params: { p
 
   const { data: profiles } = await supabase.from('profiles').select('id, email, created_at').order('created_at', { ascending: false })
   const { data: subs } = await supabase.from('subscriptions').select('*')
-  const { data: gens } = await supabase.from('generation_logs').select('user_id, estimated_cost_eur')
+  const { data: gens } = await supabase.from('generation_logs').select('user_id, estimated_cost_eur, status')
   const { data: payments } = await supabase.from('payment_events').select('user_id, amount_eur')
 
   const subMap = new Map((subs || []).map((s) => [s.user_id, s]))
@@ -155,8 +161,10 @@ async function fetchUsers(supabase: ReturnType<typeof createClient>, params: { p
   for (const g of gens || []) {
     if (!g.user_id) continue
     const cur = genMap.get(g.user_id) || { count: 0, cost: 0 }
-    cur.count += 1
-    cur.cost += Number(g.estimated_cost_eur)
+    if (g.status === 'success') {
+      cur.count += 1
+      cur.cost += Number(g.estimated_cost_eur)
+    }
     genMap.set(g.user_id, cur)
   }
   const payMap = new Map<string, number>()
@@ -313,6 +321,12 @@ serve(async (req) => {
       return json({ ok: true, updatedAt: new Date().toISOString() })
     }
 
+    if (action === 'reset_stats') {
+      const { error } = await supabase.rpc('reset_admin_stats')
+      if (error) return json({ error: error.message }, 500)
+      return json({ ok: true, updatedAt: new Date().toISOString() })
+    }
+
     if (action === 'cancel_subscription') {
       const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, { apiVersion: '2024-04-10' })
       const { data: sub } = await supabase
@@ -323,10 +337,15 @@ serve(async (req) => {
         .maybeSingle()
       if (!sub?.stripe_subscription_id) return json({ error: 'Aucun abonnement actif' }, 400)
 
+      const { data: profile } = await supabase.from('profiles').select('email').eq('id', body.userId).maybeSingle()
+
       await stripe.subscriptions.cancel(sub.stripe_subscription_id)
       await supabase.from('subscriptions').update({ status: 'canceled' }).eq('id', sub.id)
       await supabase.from('subscription_cancellations').insert({
         user_id: body.userId,
+        user_email: profile?.email ?? null,
+        plan: sub.plan,
+        cancel_reason: 'admin_panel',
         excluded_from_churn: true,
         canceled_by: 'admin',
       })

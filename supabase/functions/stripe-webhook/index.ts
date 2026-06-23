@@ -55,6 +55,21 @@ async function markEventProcessed(
   })
 }
 
+async function getProfileEmail(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+): Promise<string | null> {
+  const { data } = await supabase.from('profiles').select('email').eq('id', userId).maybeSingle()
+  return data?.email ?? null
+}
+
+function planLabel(packId: string | null | undefined): string | null {
+  if (!packId) return null
+  if (packId === 'sub_exclusif_ia' || packId === 'exclusif_ia') return 'exclusif_ia'
+  if (packId === 'sub_premium' || packId === 'premium') return 'premium'
+  return packId
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -150,12 +165,15 @@ serve(async (req) => {
       ? session.amount_total / 100
       : (packId === 'sub_exclusif_ia' ? 14.99 : 9.99)
 
+    const userEmail = session.customer_email || await getProfileEmail(supabase, userId)
+
     await supabase.from('payment_events').insert({
       user_id: userId,
+      user_email: userEmail,
       stripe_event_id: event.id,
-      event_type: 'checkout.session.completed',
+      event_type: 'subscription.new',
       amount_eur: amountEur,
-      plan: packId,
+      plan: planLabel(packId),
       stripe_subscription_id: stripeSubscriptionId ?? null,
     })
 
@@ -212,12 +230,14 @@ serve(async (req) => {
     }
 
     const amountEur = invoice.amount_paid ? invoice.amount_paid / 100 : 0
+    const userEmail = invoice.customer_email || await getProfileEmail(supabase, userId)
     await supabase.from('payment_events').insert({
       user_id: userId,
+      user_email: userEmail,
       stripe_event_id: event.id,
-      event_type: 'invoice.payment_succeeded',
+      event_type: 'subscription.renewal',
       amount_eur: amountEur,
-      plan: packId,
+      plan: planLabel(packId),
       stripe_subscription_id: subscriptionId,
     })
 
@@ -229,6 +249,13 @@ serve(async (req) => {
     const userId = subscription.metadata?.userId
       || await resolveUserId(supabase, subscription)
     if (userId) {
+      const userEmail = await getProfileEmail(supabase, userId)
+      const packId = resolvePackId(subscription.metadata)
+      const cancelReason = subscription.cancellation_details?.reason
+        || subscription.cancellation_details?.feedback
+        || subscription.cancellation_details?.comment
+        || null
+
       await supabase
         .from('subscriptions')
         .update({ status: 'canceled' })
@@ -236,6 +263,9 @@ serve(async (req) => {
         .eq('stripe_subscription_id', subscription.id)
       await supabase.from('subscription_cancellations').insert({
         user_id: userId,
+        user_email: userEmail,
+        plan: planLabel(packId),
+        cancel_reason: cancelReason,
         excluded_from_churn: false,
         canceled_by: 'stripe',
       })

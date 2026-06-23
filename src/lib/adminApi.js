@@ -41,6 +41,7 @@ export const adminApi = {
   updateSettings: (settings) => adminCall('settings_update', settings),
   hideUser: (userId) => adminCall('hide_user', { userId }),
   resetChurn: () => adminCall('reset_churn'),
+  resetStats: () => adminCall('reset_stats'),
   cancelSubscription: (userId) => adminCall('cancel_subscription', { userId }),
   checkMaintenance: () => adminCall('maintenance_check'),
 }

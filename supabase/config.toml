@@ -4,3 +4,6 @@ verify_jwt = false
 
 [functions.admin]
 verify_jwt = false
+
+[functions.log-login]
+verify_jwt = false
