@@ -7,6 +7,7 @@ import { useCredits } from '../contexts/CreditContext'
 import { useAuth } from '../contexts/AuthContext'
 import Button from '../components/common/Button'
 import { optimizeImageUrl } from '../lib/supabase'
+import { getOriginalDisplayUrl } from '../lib/originalImage'
 import { saveImageToGallery } from '../lib/saveImage'
 
 export default function Result() {
@@ -57,7 +58,7 @@ export default function Result() {
     )
   }
 
-  const originalImg = optimizeImageUrl(result.original_image_url || result.originalImage)
+  const originalImg = getOriginalDisplayUrl(result)
   const resultImg = result.result_image_url || result.resultImage
 
   const handleSave = async () => {

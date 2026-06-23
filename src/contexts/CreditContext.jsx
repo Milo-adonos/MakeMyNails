@@ -195,6 +195,28 @@ export function CreditProvider({ children }) {
     }
   }, [user, compressImage])
 
+  const uploadDataUrl = useCallback(async (dataUrl) => {
+    if (!user || !dataUrl?.startsWith('data:')) return null
+
+    try {
+      const res = await fetch(dataUrl)
+      const rawBlob = await res.blob()
+      const blob = await compressImage(rawBlob)
+      const filePath = `${user.id}/before-${crypto.randomUUID()}.jpg`
+
+      const { error } = await supabase.storage
+        .from('nail-images')
+        .upload(filePath, blob, { contentType: 'image/jpeg', upsert: true })
+
+      if (error) return null
+
+      const { data } = supabase.storage.from('nail-images').getPublicUrl(filePath)
+      return data.publicUrl
+    } catch {
+      return null
+    }
+  }, [user, compressImage])
+
   return (
     <CreditContext.Provider value={{
       credits,
@@ -211,6 +233,7 @@ export function CreditProvider({ children }) {
       completeVisualization,
       uploadImage,
       uploadBlobUrl,
+      uploadDataUrl,
       fetchHistory,
       fetchPurchases,
       fetchSubscription,

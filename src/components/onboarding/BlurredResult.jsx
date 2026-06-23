@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { optimizeImageUrl } from '../../lib/supabase'
+import { getOriginalDisplayUrl } from '../../lib/originalImage'
 import { createBlurredPreview } from '../../lib/previewImage'
 
 export default function BlurredResult({ result, onUnlock }) {
   const fullResultImg = result?.result_image_url || result?.resultImage
   const storedPreview = result?.previewImage
-  const originalImg = optimizeImageUrl(result?.original_image_url || result?.originalImage)
+  const originalImg = getOriginalDisplayUrl(result)
   const [previewSrc, setPreviewSrc] = useState(storedPreview || null)
   const [imageLoaded, setImageLoaded] = useState(false)
 

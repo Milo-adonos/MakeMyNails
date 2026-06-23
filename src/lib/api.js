@@ -103,9 +103,11 @@ export async function generateNailVisualization({
 
   if (import.meta.env.VITE_MOCK_GENERATION === 'true') {
     await new Promise((r) => setTimeout(r, 2500))
+    const { base64: originalImageData } = await imageToBase64(photo, 720)
     return {
       id: visualizationId || crypto.randomUUID(),
       originalImage: photo,
+      originalImageData,
       resultImage: '/after-1.webp',
       shape: shape || 'oval',
       style: style || 'french',
@@ -116,6 +118,7 @@ export async function generateNailVisualization({
   }
 
   const { base64: photoBase64, aspectRatio } = await imageToBase64(photo, 2048)
+  const { base64: originalImageData } = await imageToBase64(photo, 720)
 
   let inspirationBase64 = null
   if (inspirationPhoto) {
@@ -156,6 +159,7 @@ export async function generateNailVisualization({
   return {
     id: visualizationId || crypto.randomUUID(),
     originalImage: photo,
+    originalImageData,
     resultImage: data.resultImageUrl,
     shape,
     style,

@@ -9,7 +9,7 @@ import NewVisualizationFlow from '../components/dashboard/NewVisualizationFlow'
 import { useCredits } from '../contexts/CreditContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
-import { optimizeImageUrl } from '../lib/supabase'
+import { getOriginalDisplayUrl, resolveOriginalImageUrl } from '../lib/originalImage'
 import {
   getFunnelResult,
   clearFunnelResult,
@@ -19,7 +19,7 @@ import {
 function UnlockedDesignCard({ result, onView }) {
   const { t } = useTranslation()
   const resultImg = result?.result_image_url || result?.resultImage
-  const originalImg = optimizeImageUrl(result?.original_image_url || result?.originalImage, 400)
+  const originalImg = getOriginalDisplayUrl(result, 400)
 
   return (
     <motion.div
@@ -72,14 +72,18 @@ function UnlockedDesignCard({ result, onView }) {
   )
 }
 
-async function persistResultToDb(userId, result, uploadBlobUrl) {
+async function persistResultToDb(userId, result, uploadBlobUrl, uploadDataUrl) {
   const resultUrl = result?.result_image_url || result?.resultImage
   if (!userId || !resultUrl) return result
 
-  let originalUrl = result?.original_image_url || result?.originalImage || null
-  if (originalUrl?.startsWith('blob:') && uploadBlobUrl) {
-    const uploaded = await uploadBlobUrl(originalUrl)
-    if (uploaded) originalUrl = uploaded
+  const originalUrl = await resolveOriginalImageUrl(result, { uploadBlobUrl, uploadDataUrl })
+
+  const withFallback = (row) => {
+    const mapped = row?.id ? mapVisualizationToResult(row) : row
+    if (!getOriginalDisplayUrl(mapped) && result.originalImageData) {
+      return { ...mapped, originalImageData: result.originalImageData }
+    }
+    return mapped
   }
 
   const { data: existing } = await supabase
@@ -95,9 +99,9 @@ async function persistResultToDb(userId, result, uploadBlobUrl) {
         .from('visualizations')
         .update({ original_image_url: originalUrl })
         .eq('id', existing.id)
-      return mapVisualizationToResult({ ...existing, original_image_url: originalUrl })
+      return withFallback({ ...existing, original_image_url: originalUrl })
     }
-    return mapVisualizationToResult(existing)
+    return withFallback(existing)
   }
 
   const { data } = await supabase
@@ -114,7 +118,12 @@ async function persistResultToDb(userId, result, uploadBlobUrl) {
     .select()
     .single()
 
-  return data ? mapVisualizationToResult(data) : { ...result, originalImage: originalUrl, original_image_url: originalUrl }
+  if (data) return withFallback(data)
+  return withFallback({
+    ...result,
+    original_image_url: originalUrl,
+    originalImage: originalUrl || result.originalImage,
+  })
 }
 
 export default function Dashboard() {
@@ -123,7 +132,7 @@ export default function Dashboard() {
   const { user } = useAuth()
   const [chatOpen, setChatOpen] = useState(false)
   const [flowOpen, setFlowOpen] = useState(false)
-  const { addToHistory, isSubscribed, fetchHistory, uploadBlobUrl } = useCredits()
+  const { addToHistory, isSubscribed, fetchHistory, uploadBlobUrl, uploadDataUrl } = useCredits()
   const [unlockedResult, setUnlockedResult] = useState(null)
 
   useEffect(() => {
@@ -133,11 +142,11 @@ export default function Dashboard() {
       let result = null
 
       if (location.state?.unlocked && location.state?.result) {
-        result = await persistResultToDb(user.id, location.state.result, uploadBlobUrl)
+        result = await persistResultToDb(user.id, location.state.result, uploadBlobUrl, uploadDataUrl)
       } else {
         const pending = getFunnelResult()
         if (pending) {
-          result = await persistResultToDb(user.id, pending, uploadBlobUrl)
+          result = await persistResultToDb(user.id, pending, uploadBlobUrl, uploadDataUrl)
           clearFunnelResult()
         }
       }
@@ -145,7 +154,22 @@ export default function Dashboard() {
       if (!result) {
         const items = await fetchHistory()
         const latest = items.find((v) => v.result_image_url)
-        if (latest) result = mapVisualizationToResult(latest)
+        if (latest) {
+          result = mapVisualizationToResult(latest)
+          if (!latest.original_image_url) {
+            const pending = getFunnelResult()
+            if (pending) {
+              const backfilled = await persistResultToDb(user.id, {
+                ...pending,
+                id: latest.id,
+                resultImage: latest.result_image_url,
+              }, uploadBlobUrl, uploadDataUrl)
+              if (backfilled?.original_image_url || backfilled?.originalImage) {
+                result = backfilled
+              }
+            }
+          }
+        }
       }
 
       if (result) {
@@ -155,7 +179,7 @@ export default function Dashboard() {
     }
 
     unlock()
-  }, [isSubscribed, user?.id, location.state?.unlocked, location.state?.result, uploadBlobUrl])
+  }, [isSubscribed, user?.id, location.state?.unlocked, location.state?.result, uploadBlobUrl, uploadDataUrl])
 
   const handleViewDesign = () => {
     if (!unlockedResult) return
