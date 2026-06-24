@@ -1,9 +1,24 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const FAL_MODEL = 'fal-ai/nano-banana-2/edit'
+const FAL_MODEL = 'openai/gpt-image-2/edit'
 const FAL_QUEUE = `https://queue.fal.run/${FAL_MODEL}`
 const FAL_RUN = `https://fal.run/${FAL_MODEL}`
+
+/** Map client aspect labels to GPT Image 2 edit `image_size` values */
+function mapAspectRatioToImageSize(aspectRatio: string): string {
+  const map: Record<string, string> = {
+    '1:1': 'square',
+    '2:3': 'portrait_4_3',
+    '3:2': 'landscape_4_3',
+    '3:4': 'portrait_4_3',
+    '4:3': 'landscape_4_3',
+    '9:16': 'portrait_16_9',
+    '16:9': 'landscape_16_9',
+    auto: 'auto',
+  }
+  return map[aspectRatio] || 'auto'
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -124,10 +139,9 @@ async function generateWithFal(
   const input = {
     prompt,
     image_urls: imageUrls,
-    aspect_ratio: aspectRatio || 'auto',
-    resolution: '2K',
+    image_size: mapAspectRatioToImageSize(aspectRatio),
+    quality: 'high',
     output_format: 'png',
-    limit_generations: true,
     num_images: 1,
   }
 
