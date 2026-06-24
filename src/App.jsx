@@ -74,6 +74,7 @@ export default function App() {
           <Route path="/onboarding/signup" element={<Navigate to={ROUTES.signup} replace />} />
           <Route path="/onboarding/checkout" element={<Navigate to={ROUTES.stripeCheckout} replace />} />
           <Route path="/preview" element={<Navigate to={ROUTES.pricing} replace />} />
+          <Route path="/stripe-checkout" element={<Navigate to={ROUTES.stripeCheckout} replace />} />
           <Route path="/app" element={<Navigate to={ROUTES.dashboard} replace />} />
           <Route path="/app/history" element={<Navigate to={ROUTES.dashboardHistory} replace />} />
           <Route path="/app/profile" element={<Navigate to={ROUTES.dashboardProfile} replace />} />

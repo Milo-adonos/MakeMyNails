@@ -1,12 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import {
-  getSelectedPlan,
-  startStripeCheckoutFromSelectedPlan,
-} from '../lib/funnelSession'
+import { getSelectedPlan } from '../lib/funnelSession'
 import { ROUTES } from '../lib/routes'
-import { trackEvent, planKey, getPlanRevenue } from '../lib/radar'
 
 export default function AuthCallback() {
   const navigate = useNavigate()
@@ -23,16 +19,7 @@ export default function AuthCallback() {
       const selectedPlan = getSelectedPlan()
 
       if (selectedPlan) {
-        try {
-          trackEvent('checkout_started', {
-            plan: planKey(selectedPlan),
-            placement: 'auth_callback',
-          }, getPlanRevenue(selectedPlan))
-          await startStripeCheckoutFromSelectedPlan()
-        } catch (err) {
-          console.error(err)
-          navigate(ROUTES.pricing, { replace: true })
-        }
+        navigate(ROUTES.stripeCheckout, { replace: true })
         return
       }
 

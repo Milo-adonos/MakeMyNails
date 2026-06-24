@@ -8,7 +8,6 @@ import { supabase } from '../../lib/supabase'
 import {
   getSelectedPlan,
   getPlanLabel,
-  startStripeCheckoutFromSelectedPlan,
 } from '../../lib/funnelSession'
 import { isMaintenanceMode } from '../../lib/maintenance'
 import { ROUTES } from '../../lib/routes'
@@ -29,15 +28,9 @@ export default function FunnelSignup({ onCheckout }) {
     for (let i = 0; i < 12; i++) {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.access_token) {
-        try {
-          await startStripeCheckoutFromSelectedPlan()
-          return
-        } catch (err) {
-          setError(err.message || 'Impossible de démarrer le paiement.')
-          if (onCheckout) onCheckout()
-          else navigate(ROUTES.pricing)
-          return
-        }
+        if (onCheckout) onCheckout()
+        else navigate(ROUTES.stripeCheckout, { replace: true })
+        return
       }
       await new Promise((r) => setTimeout(r, 500))
     }

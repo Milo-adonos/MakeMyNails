@@ -25,3 +25,14 @@ export function trackEvent(event, properties, opts) {
     // Radar non chargé ou bloqué
   }
 }
+
+/** Pageview explicite Radar (SPA) — ex. /checkoutstripe après signup. */
+export function trackPageView(properties) {
+  try {
+    if (typeof window !== 'undefined' && window.visitors?.pageview) {
+      window.visitors.pageview(properties || {})
+    }
+  } catch {
+    // Radar non chargé ou bloqué
+  }
+}

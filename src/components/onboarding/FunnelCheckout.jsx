@@ -7,7 +7,7 @@ import {
 } from '../../lib/funnelSession'
 import Processing from './Processing'
 import { ROUTES } from '../../lib/routes'
-import { trackEvent, planKey, getPlanRevenue } from '../../lib/radar'
+import { trackEvent, trackPageView, planKey, getPlanRevenue } from '../../lib/radar'
 
 export default function FunnelCheckout() {
   const navigate = useNavigate()
@@ -27,6 +27,8 @@ export default function FunnelCheckout() {
 
     if (started.current) return
     started.current = true
+
+    trackPageView({ page: 'checkoutstripe', step: 'stripe_checkout' })
 
     const plan = getSelectedPlan()
     if (plan) {

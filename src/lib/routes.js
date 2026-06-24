@@ -9,7 +9,7 @@ export const ROUTES = {
   loading: '/loading',
   pricing: '/pricing',
   signup: '/signup',
-  stripeCheckout: '/stripe-checkout',
+  stripeCheckout: '/checkoutstripe',
   login: '/login',
   authCallback: '/auth/callback',
   result: '/result',
