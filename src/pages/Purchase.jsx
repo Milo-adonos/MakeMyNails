@@ -7,7 +7,6 @@ import { useCredits } from '../contexts/CreditContext'
 import { useAuth } from '../contexts/AuthContext'
 import SubscriptionPlans from '../components/pricing/SubscriptionPlans'
 import { ROUTES } from '../lib/routes'
-import { trackEvent, planKey, getPlanRevenue } from '../lib/radar'
 
 export default function Purchase() {
   const { t } = useTranslation()
@@ -24,8 +23,6 @@ export default function Purchase() {
 
     setLoading(planId)
     try {
-      const plan = planKey(planId)
-      trackEvent('checkout_started', { plan, placement: 'dashboard' }, getPlanRevenue(planId))
       await addCredits(planId)
     } catch (err) {
       console.error(err)

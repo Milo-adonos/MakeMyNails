@@ -26,11 +26,11 @@ export function trackEvent(event, properties, opts) {
   }
 }
 
-/** Pageview explicite Radar (SPA) — ex. /checkoutstripe après signup. */
-export function trackPageView(properties) {
+/** Force l'envoi immédiat de la queue Radar (avant redirection externe Stripe). */
+export function flushRadar() {
   try {
-    if (typeof window !== 'undefined' && window.visitors?.pageview) {
-      window.visitors.pageview(properties || {})
+    if (typeof window !== 'undefined' && window.visitors?.flush) {
+      window.visitors.flush()
     }
   } catch {
     // Radar non chargé ou bloqué

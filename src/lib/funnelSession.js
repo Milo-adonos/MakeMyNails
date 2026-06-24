@@ -1,4 +1,4 @@
-import { createCheckoutSession } from './stripe'
+import { createCheckoutSession, openStripeCheckout } from './stripe'
 import { supabase } from './supabase'
 
 const SELECTED_PLAN_KEY = 'selected_plan'
@@ -118,7 +118,7 @@ export async function startStripeCheckoutFromSelectedPlan() {
   if (!session?.access_token) throw new Error('Non authentifiée')
 
   const url = await createCheckoutSession(stripePlanId, session.access_token)
-  window.location.href = url
+  openStripeCheckout(url, { planId: stripePlanId, placement: 'funnel' })
 }
 
 export function mapVisualizationToResult(viz) {

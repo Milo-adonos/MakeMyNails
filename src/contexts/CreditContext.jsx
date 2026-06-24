@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import { createCheckoutSession } from '../lib/stripe'
+import { createCheckoutSession, openStripeCheckout } from '../lib/stripe'
 import {
   subscribePostPaymentGeneration,
   resumePostPaymentGenerationIfNeeded,
@@ -99,7 +99,7 @@ export function CreditProvider({ children }) {
     if (!accessToken) throw new Error('Not authenticated')
 
     const url = await createCheckoutSession(packId, accessToken)
-    window.location.href = url
+    openStripeCheckout(url, { planId: packId, placement: 'dashboard' })
   }, [user])
 
   const createVisualization = useCallback(async ({ shape, style, length, originalImageUrl }) => {

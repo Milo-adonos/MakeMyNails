@@ -1,3 +1,5 @@
+import { trackEvent, flushRadar, planKey, getPlanRevenue } from './radar'
+
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
@@ -49,6 +51,17 @@ export async function createCheckoutSession(planId, accessToken) {
   const data = await res.json()
   if (!res.ok) throw new Error(data.error || data.message || `HTTP ${res.status} — ${JSON.stringify(data)}`)
   return data.url
+}
+
+/** Redirection Stripe + événement Radar unique (comptabilise les ouvertures checkout). */
+export function openStripeCheckout(url, { planId, placement = 'unknown' } = {}) {
+  trackEvent(
+    'stripe_checkout',
+    { plan: planKey(planId), placement },
+    getPlanRevenue(planId),
+  )
+  flushRadar()
+  window.location.href = url
 }
 
 export async function createPortalSession(accessToken) {

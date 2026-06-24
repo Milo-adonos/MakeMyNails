@@ -59,16 +59,18 @@ export default function Onboarding() {
     restoredRef.current = true
 
     const fromPath = funnelStepFromPath(location.pathname)
-    if (fromPath === 'pricing' || fromPath === 'signup') return
+    if (fromPath === 'pricing' || fromPath === 'signup' || fromPath === 'checkout') return
 
     const savedStep = getFunnelStep()
     if (!savedStep) return
 
-    const targetStep = ['pricing', 'signup'].includes(savedStep)
-      ? savedStep
-      : savedStep === 'result'
-        ? 'pricing'
-        : null
+    const targetStep = savedStep === 'checkout'
+      ? 'checkout'
+      : ['pricing', 'signup'].includes(savedStep)
+        ? savedStep
+        : savedStep === 'result'
+          ? 'pricing'
+          : null
 
     if (!targetStep) return
 
