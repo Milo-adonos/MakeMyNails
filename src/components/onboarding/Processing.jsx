@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const DEFAULT_MESSAGES = [
@@ -17,9 +17,19 @@ const FACTS = [
   'Envoyer ton design à ta nail artist réduit les erreurs de 90% 📲',
 ]
 
-export default function Processing({ messages = DEFAULT_MESSAGES, fake = false, hint }) {
+const FAKE_DURATION_MS = 8000
+
+export default function Processing({
+  messages = DEFAULT_MESSAGES,
+  fake = false,
+  durationMs = FAKE_DURATION_MS,
+  hint,
+  onComplete,
+}) {
   const [messageIndex, setMessageIndex] = useState(0)
   const [factIndex, setFactIndex] = useState(0)
+  const [progress, setProgress] = useState(0)
+  const completedRef = useRef(false)
 
   useEffect(() => {
     const messageInterval = setInterval(() => {
@@ -34,6 +44,33 @@ export default function Processing({ messages = DEFAULT_MESSAGES, fake = false, 
     }, 5000)
     return () => clearInterval(factInterval)
   }, [])
+
+  useEffect(() => {
+    if (!fake) return undefined
+
+    const started = performance.now()
+    let frameId = 0
+
+    const tick = (now) => {
+      const elapsed = now - started
+      const next = Math.min(100, (elapsed / durationMs) * 100)
+      setProgress(next)
+
+      if (elapsed >= durationMs) {
+        setProgress(100)
+        if (!completedRef.current) {
+          completedRef.current = true
+          onComplete?.()
+        }
+        return
+      }
+
+      frameId = requestAnimationFrame(tick)
+    }
+
+    frameId = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frameId)
+  }, [fake, durationMs, onComplete])
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-offwhite to-nude-light/30">
@@ -61,11 +98,18 @@ export default function Processing({ messages = DEFAULT_MESSAGES, fake = false, 
 
         <div className="w-full max-w-xs">
           <div className="h-1 bg-nude/40 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full w-1/3 bg-gradient-to-r from-nude-dark to-beige-dark rounded-full"
-              animate={{ x: ['-100%', '300%'] }}
-              transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-            />
+            {fake ? (
+              <div
+                className="h-full bg-gradient-to-r from-nude-dark to-beige-dark rounded-full transition-[width] duration-75 ease-linear"
+                style={{ width: `${progress}%` }}
+              />
+            ) : (
+              <motion.div
+                className="h-full w-1/3 bg-gradient-to-r from-nude-dark to-beige-dark rounded-full"
+                animate={{ x: ['-100%', '300%'] }}
+                transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+              />
+            )}
           </div>
           <p className="text-center text-xs text-brown-light/50 mt-4">
             {hint || (fake

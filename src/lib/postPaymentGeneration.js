@@ -2,7 +2,6 @@ import { supabase } from './supabase'
 import { generateFromFunnelPayload } from './api'
 import {
   getFunnelGenData,
-  getFunnelResult,
   clearFunnelSession,
   persistFunnelResult,
   mapVisualizationToResult,
@@ -74,19 +73,9 @@ export async function runPostPaymentGeneration(deps) {
   if (activeJob) return activeJob
 
   const stored = getFunnelGenData()
-  const pendingPreview = getFunnelResult()
 
   if (!stored) {
-    if (pendingPreview?.resultImage && !pendingPreview?.pendingGeneration) {
-      notify({ status: 'success', result: pendingPreview, error: null })
-      return pendingPreview
-    }
     return null
-  }
-
-  if (pendingPreview?.resultImage && !pendingPreview?.pendingGeneration) {
-    notify({ status: 'success', result: pendingPreview, error: null })
-    return pendingPreview
   }
 
   activeJob = (async () => {
@@ -185,13 +174,9 @@ export async function runPostPaymentGeneration(deps) {
 
 export function resumePostPaymentGenerationIfNeeded(deps) {
   const stored = getFunnelGenData()
-  const pendingPreview = getFunnelResult()
   const pendingViz = sessionStorage.getItem(PENDING_VIZ_KEY)
 
   if (!stored && !pendingViz) {
-    if (pendingPreview?.resultImage && !pendingPreview?.pendingGeneration) {
-      notify({ status: 'success', result: pendingPreview, error: null })
-    }
     return null
   }
 

@@ -3,29 +3,17 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertCircle, RotateCcw } from 'lucide-react'
 import Welcome from '../components/onboarding/Welcome'
-import BlurredResult from '../components/onboarding/BlurredResult'
 import ManicureSelectionSteps from '../components/funnel/ManicureSelectionSteps'
 import FunnelSignup from '../components/onboarding/FunnelSignup'
 import FunnelPricing from '../components/onboarding/FunnelPricing'
 import FunnelCheckout from '../components/onboarding/FunnelCheckout'
+import { serializeFunnelGenPayload } from '../lib/api'
 import {
-  buildFunnelPreview,
-  serializeFunnelGenPayload,
-  generateFromFunnelPayload,
-} from '../lib/api'
-import { useAuth } from '../contexts/AuthContext'
-import { useCredits } from '../contexts/CreditContext'
-import {
-  persistFunnelResult,
-  getFunnelResult,
   persistFunnelStep,
   getFunnelStep,
   persistFunnelGenData,
-  getFunnelGenData,
-  clearFunnelSession,
 } from '../lib/funnelSession'
-import { FUNNEL_STEP_PATH, ROUTES, funnelStepFromPath } from '../lib/routes'
-import { trackEvent } from '../lib/radar'
+import { FUNNEL_STEP_PATH, funnelStepFromPath } from '../lib/routes'
 import {
   buildGenPayload,
   EMPTY_MANICURE_DATA,
@@ -37,8 +25,6 @@ import {
 export default function Onboarding() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { isAuthenticated } = useAuth()
-  const { createVisualization, completeVisualization, uploadBlobUrl, isSubscribed } = useCredits()
   const processingRef = useRef(null)
   const preselectHandled = useRef(false)
   const restoredRef = useRef(false)
@@ -47,10 +33,8 @@ export default function Onboarding() {
     if (typeof window === 'undefined') return 'welcome'
     return funnelStepFromPath(window.location.pathname) || getFunnelStep() || 'welcome'
   })
-  const [result, setResult] = useState(null)
   const [generationError, setGenerationError] = useState(null)
   const [skipStyleSteps, setSkipStyleSteps] = useState(false)
-  const [isRealGeneration, setIsRealGeneration] = useState(false)
 
   const [data, setData] = useState(EMPTY_MANICURE_DATA)
 
@@ -60,7 +44,7 @@ export default function Onboarding() {
     if (path && path !== window.location.pathname) {
       navigate(path, { replace })
     }
-    if (['result', 'pricing', 'signup', 'checkout', 'processing'].includes(nextStep)) {
+    if (['pricing', 'signup', 'checkout', 'processing'].includes(nextStep)) {
       persistFunnelStep(nextStep)
     }
   }, [navigate])
@@ -74,48 +58,24 @@ export default function Onboarding() {
     if (restoredRef.current) return
     restoredRef.current = true
 
-    const saved = getFunnelResult()
-    if (!saved) return
-
-    setResult(saved)
     const fromPath = funnelStepFromPath(location.pathname)
-    if (fromPath === 'result' || fromPath === 'pricing' || fromPath === 'signup') return
+    if (fromPath === 'pricing' || fromPath === 'signup') return
 
     const savedStep = getFunnelStep()
-    const targetStep = ['result', 'pricing', 'signup'].includes(savedStep) ? savedStep : 'result'
+    if (!savedStep) return
+
+    const targetStep = ['pricing', 'signup'].includes(savedStep)
+      ? savedStep
+      : savedStep === 'result'
+        ? 'pricing'
+        : null
+
+    if (!targetStep) return
+
     setStep(targetStep)
     persistFunnelStep(targetStep)
     navigate(FUNNEL_STEP_PATH[targetStep], { replace: true })
   }, [location.pathname, navigate])
-
-  useEffect(() => {
-    if (result) persistFunnelResult(result)
-  }, [result])
-
-  const runRealGeneration = useCallback(async (stored) => {
-    let vizId = null
-    const originalImageUrl = await uploadBlobUrl(stored.photoDataUrl)
-    const vizResult = await createVisualization({
-      shape: stored.shape,
-      style: stored.style,
-      length: stored.length,
-      originalImageUrl,
-    })
-    vizId = vizResult?.visualization_id
-
-    const generated = await generateFromFunnelPayload(stored, vizId)
-
-    if (vizId && generated.resultImage) {
-      await completeVisualization(vizId, generated.resultImage)
-    }
-
-    trackEvent('generation_complete', {
-      mode: generated.mode || stored.mode || 'onboarding',
-      placement: 'funnel_post_payment',
-    })
-
-    return generated
-  }, [createVisualization, completeVisualization, uploadBlobUrl])
 
   const enterProcessing = useCallback((genData) => {
     if (!genData.photo) {
@@ -123,23 +83,28 @@ export default function Onboarding() {
       return
     }
 
-    setIsRealGeneration(false)
     setGenerationError(null)
-    processingRef.current = (async () => {
-      const [preview, stored] = await Promise.all([
-        buildFunnelPreview(genData),
-        serializeFunnelGenPayload(genData),
-      ])
-      persistFunnelGenData(stored)
-      setResult(preview)
-      return preview
-    })().catch((err) => {
-      setGenerationError(err.message || 'Une erreur est survenue.')
-      processingRef.current = null
-      throw err
-    })
+    processingRef.current = serializeFunnelGenPayload(genData)
+      .then((stored) => {
+        persistFunnelGenData(stored)
+      })
+      .catch((err) => {
+        setGenerationError(err.message || 'Une erreur est survenue.')
+        processingRef.current = null
+        throw err
+      })
 
     goTo('processing')
+  }, [goTo])
+
+  const handleProcessingComplete = useCallback(async () => {
+    try {
+      await processingRef.current
+      processingRef.current = null
+      goTo('pricing', { replace: true })
+    } catch {
+      processingRef.current = null
+    }
   }, [goTo])
 
   useEffect(() => {
@@ -165,26 +130,6 @@ export default function Onboarding() {
     }
   }, [location.state, enterProcessing, goTo])
 
-  useEffect(() => {
-    if (step !== 'processing' || !processingRef.current) return
-
-    let cancelled = false
-
-    processingRef.current
-      .then((res) => {
-        if (!cancelled && res) {
-          if (!isRealGeneration) {
-            goTo('result')
-          }
-        }
-      })
-      .catch(() => {
-        if (!cancelled) processingRef.current = null
-      })
-
-    return () => { cancelled = true }
-  }, [step, goTo, isRealGeneration])
-
   const handleInspirationNext = (inspirationUrl) => {
     if (inspirationUrl) {
       setSkipStyleSteps(true)
@@ -207,37 +152,6 @@ export default function Onboarding() {
     const genData = buildGenPayload({ ...data, length: length || data.length })
     if (!genData.shape || !genData.style || !genData.length) return
     enterProcessing(genData)
-  }
-
-  const handleUnlock = async () => {
-    trackEvent('preview_unlock', { placement: 'funnel' })
-
-    if (isAuthenticated && isSubscribed) {
-      const stored = getFunnelGenData()
-      if (!stored) {
-        setGenerationError('Données du funnel introuvables. Recommence depuis le début.')
-        return
-      }
-
-      setIsRealGeneration(true)
-      setGenerationError(null)
-      goTo('processing')
-
-      processingRef.current = runRealGeneration(stored)
-        .then((generated) => {
-          clearFunnelSession()
-          navigate(ROUTES.dashboard, { state: { result: generated, unlocked: true } })
-          return generated
-        })
-        .catch((err) => {
-          setGenerationError(err.message || 'La génération a échoué.')
-          processingRef.current = null
-          throw err
-        })
-      return
-    }
-
-    goTo('pricing', { replace: true })
   }
 
   const showProgress = MANICURE_SELECTION_STEPS.includes(step)
@@ -288,17 +202,16 @@ export default function Onboarding() {
             onInspirationNext={handleInspirationNext}
             onInspirationSkip={handleInspirationSkip}
             onLengthNext={handleLengthNext}
-            processingFake={false}
+            processingFake={step === 'processing'}
+            onProcessingComplete={handleProcessingComplete}
             processingMessages={[
               'Analyse de ta main...',
-              'Création de ton aperçu...',
+              'Création de ton design...',
               'Presque prête...',
             ]}
-            processingHint="Génération rapide — moins de 10 secondes"
+            processingHint="Préparation de ton aperçu — 8 secondes"
           />
         )
-      case 'result':
-        return <BlurredResult result={result} onUnlock={handleUnlock} />
       case 'signup':
         return <FunnelSignup onCheckout={() => goTo('checkout')} />
       case 'pricing':

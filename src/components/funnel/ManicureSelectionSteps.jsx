@@ -17,6 +17,7 @@ export default function ManicureSelectionSteps({
   processingFake = false,
   processingMessages,
   processingHint,
+  onProcessingComplete,
 }) {
   switch (step) {
     case 'photo':
@@ -80,6 +81,7 @@ export default function ManicureSelectionSteps({
           fake={processingFake}
           messages={processingMessages}
           hint={processingHint}
+          onComplete={onProcessingComplete}
         />
       )
     default:

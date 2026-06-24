@@ -6,12 +6,7 @@ const FAL_QUEUE = `https://queue.fal.run/${FAL_MODEL}`
 const FAL_RUN = `https://fal.run/${FAL_MODEL}`
 
 const KIE_AI_API = 'https://api.kie.ai/api/v1'
-const KIE_FLUX_KONTEXT_GENERATE = `${KIE_AI_API}/flux/kontext/generate`
-const KIE_FLUX_KONTEXT_MODEL = 'flux-kontext-pro'
 const KIE_GPT_IMAGE_2_MODEL = 'gpt-image-2-image-to-image'
-
-const PREVIEW_PROMPT_INSPO =
-  'Replace the nails in image 1 with the nails from image 2. Quality does not matter.'
 
 function mapAspectRatio(aspectRatio: string): string {
   const map: Record<string, string> = {
@@ -33,7 +28,7 @@ const corsHeaders = {
 }
 
 type GenerationMode = 'inspiration' | 'onboarding' | 'emma'
-type GenerationSource = 'preview' | 'post_payment' | string
+type GenerationSource = 'post_payment' | string
 
 const SHAPE_LABELS: Record<string, string> = {
   almond: 'almond',
@@ -87,17 +82,6 @@ const PROMPT_RULES = `ABSOLUTE RULES FOR ALL 3 CASES:
 — No AI artifacts, no skin smoothing, no background changes.
 
 — Ultra realistic, 2K quality, same format as Image 1.`
-
-function buildPreviewPrompt(
-  mode: GenerationMode,
-  style?: string,
-  customNote?: string,
-): string {
-  if (mode === 'inspiration') return PREVIEW_PROMPT_INSPO
-  const styleLabel = STYLE_LABELS[style?.toLowerCase() || ''] || style || 'French tip'
-  const color = customNote?.trim() || styleLabel
-  return `Apply ${color} ${styleLabel} nail art on the nails in this image. Keep everything else identical. Quality does not matter.`
-}
 
 function buildCase2Prompt(
   shape: string,
@@ -165,14 +149,10 @@ function buildFormat(
   length?: string,
 ): string {
   const ar = mapAspectRatio(aspectRatio)
-  let sizeLabel: string
-  if (source === 'preview') {
-    sizeLabel = `flux-kontext-pro · preview · ${ar}`
-  } else if (source === 'post_payment') {
-    sizeLabel = `gpt-image-2 · 2K · ${ar}`
-  } else {
-    sizeLabel = `nano-banana-2 · 2K · ${ar}`
-  }
+  const sizeLabel = source === 'post_payment'
+    ? `gpt-image-2 · 2K · ${ar}`
+    : `nano-banana-2 · 2K · ${ar}`
+
   if (mode === 'onboarding' && shape && style && length) {
     return `${mode} · ${shape}/${style}/${length} · ${sizeLabel}`
   }
@@ -274,103 +254,6 @@ async function uploadImagesForKie(
     urls.push(await uploadDataUriToStorage(supabase, imageDataUris[i], `${prefix}-${i + 1}`))
   }
   return urls
-}
-
-function bytesToDataUri(bytes: Uint8Array, mime = 'image/jpeg'): string {
-  let binary = ''
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
-  return `data:${mime};base64,${btoa(binary)}`
-}
-
-/** Side-by-side composite for Flux (single inputImage) — image 1 left, image 2 right. */
-async function compositePreviewImages(dataUris: string[]): Promise<string> {
-  if (dataUris.length <= 1) return dataUris[0]
-
-  const { Image } = await import('https://deno.land/x/imagescript@1.3.0/mod.ts')
-  const decoded = await Promise.all(dataUris.slice(0, 2).map(async (uri) => {
-    const { bytes } = parseDataUri(uri)
-    return await Image.decode(bytes)
-  }))
-
-  const targetH = 256
-  const resized = decoded.map((img) => img.resize(Image.RESIZE_AUTO, targetH))
-  const totalW = resized.reduce((sum, img) => sum + img.width, 0)
-  const canvas = new Image(totalW, targetH)
-  let x = 0
-  for (const img of resized) {
-    canvas.composite(img, x, 0)
-    x += img.width
-  }
-
-  return bytesToDataUri(await canvas.encodeJPEG(65))
-}
-
-async function pollFluxKontextTask(apiKey: string, taskId: string): Promise<string> {
-  for (let i = 0; i < 25; i++) {
-    await new Promise((r) => setTimeout(r, 800))
-
-    const statusRes = await fetch(
-      `${KIE_AI_API}/flux/kontext/record-info?taskId=${taskId}`,
-      { headers: { 'Authorization': `Bearer ${apiKey}` } },
-    )
-    const statusJson = await statusRes.json()
-    const flag = statusJson.data?.successFlag
-
-    if (flag === 1) {
-      const url = statusJson.data?.response?.resultImageUrl
-      if (!url) throw new Error('Flux Kontext returned no result image URL')
-      return url
-    }
-
-    if (flag === 2 || flag === 3) {
-      throw new Error(
-        statusJson.data?.errorMessage || statusJson.msg || 'Flux Kontext generation failed',
-      )
-    }
-  }
-
-  throw new Error('Flux Kontext generation timed out')
-}
-
-async function generateWithKieFluxPreview(
-  apiKey: string,
-  supabase: ReturnType<typeof createClient>,
-  imageDataUris: string[],
-  prompt: string,
-  mode: GenerationMode,
-): Promise<string> {
-  const sourceUri = mode === 'inspiration' && imageDataUris.length >= 2
-    ? await compositePreviewImages(imageDataUris)
-    : imageDataUris[0]
-
-  const inputImage = await uploadDataUriToStorage(supabase, sourceUri, 'flux-preview')
-
-  const createRes = await fetch(KIE_FLUX_KONTEXT_GENERATE, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      prompt,
-      inputImage,
-      model: KIE_FLUX_KONTEXT_MODEL,
-      outputFormat: 'jpeg',
-      promptUpsampling: false,
-      enableTranslation: false,
-      safetyTolerance: 2,
-    }),
-  })
-
-  const createJson = await createRes.json()
-  if (createJson.code !== 200) {
-    throw new Error(createJson.msg || createJson.message || 'Flux Kontext preview failed')
-  }
-
-  const taskId = createJson.data?.taskId
-  if (!taskId) throw new Error('Flux Kontext did not return a taskId')
-
-  return pollFluxKontextTask(apiKey, taskId)
 }
 
 async function generateWithKieGptImage2(
@@ -529,9 +412,8 @@ serve(async (req) => {
       source?: GenerationSource
     }
 
-    const isPreview = source === 'preview'
     const isPostPayment = source === 'post_payment'
-    const effectiveAspectRatio = (isPreview || isPostPayment) ? 'auto' : aspectRatio
+    const effectiveAspectRatio = isPostPayment ? 'auto' : aspectRatio
 
     const costEur = await getGenerationCost(supabase)
 
@@ -572,7 +454,7 @@ serve(async (req) => {
       })
     }
 
-    if (!isPreview && mode === 'emma' && !occasion && !occasionLabel) {
+    if (mode === 'emma' && !occasion && !occasionLabel) {
       return new Response(JSON.stringify({ error: 'Missing occasion' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -585,7 +467,7 @@ serve(async (req) => {
       imageDataUris.push(toDataUri(inspirationBase64))
     }
 
-    if (!isPreview && outfitBase64) {
+    if (outfitBase64) {
       imageDataUris.push(toDataUri(outfitBase64))
     }
 
@@ -593,19 +475,7 @@ serve(async (req) => {
     let resultImageUrl: string
     let provider: string
 
-    if (isPreview) {
-      const kieKey = Deno.env.get('KIE_AI_API_KEY')
-      if (!kieKey) throw new Error('KIE_AI_API_KEY not configured')
-      prompt = buildPreviewPrompt(mode, style, customNote)
-      resultImageUrl = await generateWithKieFluxPreview(
-        kieKey,
-        supabase,
-        imageDataUris,
-        prompt,
-        mode,
-      )
-      provider = 'flux-kontext-preview'
-    } else if (isPostPayment) {
+    if (isPostPayment) {
       const kieKey = Deno.env.get('KIE_AI_API_KEY')
       if (!kieKey) throw new Error('KIE_AI_API_KEY not configured')
       prompt = buildFinalPrompt(

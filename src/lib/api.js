@@ -1,7 +1,4 @@
 import { supabase } from './supabase'
-import { createFunnelPaywallPreview } from './previewImage'
-
-const FAKE_FUNNEL_LOADING_MS = 8000
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -184,77 +181,6 @@ export async function generateNailVisualization({
     mode,
     createdAt: new Date().toISOString(),
   }
-}
-
-/** Aperçu funnel pré-paiement — Kie.ai Flux Kontext Pro, basse résolution, prompt minimal. */
-export async function buildFunnelPreview(genData) {
-  if (import.meta.env.VITE_MOCK_GENERATION === 'true') {
-    await new Promise((resolve) => setTimeout(resolve, FAKE_FUNNEL_LOADING_MS))
-    const { base64: originalImageData } = await imageToBase64(genData.photo, 720)
-    const previewImage = await createFunnelPaywallPreview(originalImageData || genData.photo)
-    const mode = genData.mode || (genData.inspirationPhoto ? 'inspiration' : 'onboarding')
-    return {
-      pendingGeneration: true,
-      originalImage: genData.photo,
-      originalImageData,
-      previewImage,
-      shape: genData.shape,
-      style: genData.style,
-      length: genData.length,
-      mode,
-      createdAt: new Date().toISOString(),
-    }
-  }
-
-  const { base64: photoBase64 } = await imageToBase64(genData.photo, 384)
-  const { base64: originalImageData } = await imageToBase64(genData.photo, 720)
-
-  let inspirationBase64 = null
-  if (genData.inspirationPhoto) {
-    inspirationBase64 = (await imageToBase64(genData.inspirationPhoto, 384)).base64
-  }
-
-  const mode = genData.mode || (genData.inspirationPhoto ? 'inspiration' : 'onboarding')
-
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-nails`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-    },
-    body: JSON.stringify({
-      photoBase64,
-      mode,
-      shape: genData.shape,
-      style: genData.style,
-      length: genData.length,
-      customNote: genData.customNote,
-      inspirationBase64,
-      aspectRatio: 'auto',
-      source: 'preview',
-    }),
-  })
-
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || 'Preview generation failed')
-
-  return {
-    pendingGeneration: true,
-    originalImage: genData.photo,
-    originalImageData,
-    previewImage: data.resultImageUrl,
-    resultImage: data.resultImageUrl,
-    shape: genData.shape,
-    style: genData.style,
-    length: genData.length,
-    mode,
-    createdAt: new Date().toISOString(),
-  }
-}
-
-/** @deprecated Utiliser buildFunnelPreview */
-export async function buildFakeFunnelPreview(genData) {
-  return buildFunnelPreview(genData)
 }
 
 /** Sérialise le funnel pour génération réelle après paiement (base64, survit à Stripe). */
