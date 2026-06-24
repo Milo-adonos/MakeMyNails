@@ -133,7 +133,7 @@ export default function Dashboard() {
   const { user } = useAuth()
   const [chatOpen, setChatOpen] = useState(false)
   const [flowOpen, setFlowOpen] = useState(false)
-  const { addToHistory, isSubscribed, fetchHistory, uploadBlobUrl, uploadDataUrl } = useCredits()
+  const { addToHistory, isSubscribed, fetchHistory, uploadBlobUrl, uploadDataUrl, pendingGeneration } = useCredits()
   const [unlockedResult, setUnlockedResult] = useState(null)
 
   useEffect(() => {
@@ -181,6 +181,13 @@ export default function Dashboard() {
 
     unlock()
   }, [isSubscribed, user?.id, location.state?.unlocked, location.state?.result, uploadBlobUrl, uploadDataUrl])
+
+  useEffect(() => {
+    if (pendingGeneration.status !== 'success' || !pendingGeneration.result) return
+    const result = pendingGeneration.result
+    addToHistory(result)
+    setUnlockedResult(result)
+  }, [pendingGeneration.status, pendingGeneration.result, addToHistory])
 
   const handleViewDesign = () => {
     if (!unlockedResult) return

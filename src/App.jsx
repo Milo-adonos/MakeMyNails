@@ -6,6 +6,7 @@ import { useAuth } from './contexts/AuthContext'
 import { FUNNEL_PATHS, ROUTES } from './lib/routes'
 
 const Navbar = lazy(() => import('./components/layout/Navbar'))
+const GenerationBanner = lazy(() => import('./components/dashboard/GenerationBanner'))
 
 const Login = lazy(() => import('./pages/Login'))
 const Onboarding = lazy(() => import('./pages/Onboarding'))
@@ -45,6 +46,7 @@ export default function App() {
       {isApp && (
         <Suspense fallback={null}>
           <Navbar />
+          <GenerationBanner />
         </Suspense>
       )}
       <Suspense fallback={<PageFallback />}>

@@ -1,6 +1,12 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { createCheckoutSession } from '../lib/stripe'
+import {
+  subscribePostPaymentGeneration,
+  resumePostPaymentGenerationIfNeeded,
+  runPostPaymentGeneration,
+} from '../lib/postPaymentGeneration'
+import { getFunnelGenData } from '../lib/funnelSession'
 import { useAuth } from './AuthContext'
 
 const CreditContext = createContext(null)
@@ -13,6 +19,11 @@ export function CreditProvider({ children }) {
   const [purchases, setPurchases] = useState([])
   const [subscription, setSubscription] = useState(null)
   const [localCredits, setLocalCredits] = useState(FREE_CREDITS)
+  const [pendingGeneration, setPendingGeneration] = useState({
+    status: 'idle',
+    result: null,
+    error: null,
+  })
 
   const credits = profile?.credits ?? localCredits
   const isSubscribed = subscription?.status === 'active'
@@ -70,6 +81,8 @@ export function CreditProvider({ children }) {
     fetchPurchases()
     fetchSubscription()
   }, [fetchHistory, fetchPurchases, fetchSubscription])
+
+  useEffect(() => subscribePostPaymentGeneration(setPendingGeneration), [])
 
   const canGenerate = useCallback(() => {
     if (isSubscribed) return true
@@ -217,6 +230,63 @@ export function CreditProvider({ children }) {
     }
   }, [user, compressImage])
 
+  const startPostPaymentGeneration = useCallback(async (options = {}) => {
+    const { onSubscriptionReady } = options
+
+    return runPostPaymentGeneration({
+      waitForActiveSubscription,
+      createVisualization,
+      completeVisualization,
+      uploadBlobUrl,
+      uploadDataUrl,
+      fetchHistory,
+      onSubscriptionReady: async (sub) => {
+        await fetchHistory()
+        await fetchPurchases()
+        await fetchSubscription()
+        if (onSubscriptionReady) await onSubscriptionReady(sub)
+      },
+    })
+  }, [
+    waitForActiveSubscription,
+    createVisualization,
+    completeVisualization,
+    uploadBlobUrl,
+    uploadDataUrl,
+    fetchHistory,
+    fetchPurchases,
+    fetchSubscription,
+  ])
+
+  useEffect(() => {
+    if (!user || !isSubscribed) return
+    if (!getFunnelGenData() && !sessionStorage.getItem('mmn_pending_viz_id')) return
+
+    resumePostPaymentGenerationIfNeeded({
+      waitForActiveSubscription,
+      createVisualization,
+      completeVisualization,
+      uploadBlobUrl,
+      uploadDataUrl,
+      fetchHistory,
+    })
+  }, [
+    user?.id,
+    isSubscribed,
+    waitForActiveSubscription,
+    createVisualization,
+    completeVisualization,
+    uploadBlobUrl,
+    uploadDataUrl,
+    fetchHistory,
+  ])
+
+  useEffect(() => {
+    if (!['waiting', 'generating'].includes(pendingGeneration.status)) return
+    const interval = setInterval(() => fetchHistory(), 3000)
+    return () => clearInterval(interval)
+  }, [pendingGeneration.status, fetchHistory])
+
   return (
     <CreditContext.Provider value={{
       credits,
@@ -238,6 +308,8 @@ export function CreditProvider({ children }) {
       fetchPurchases,
       fetchSubscription,
       waitForActiveSubscription,
+      pendingGeneration,
+      startPostPaymentGeneration,
     }}>
       {children}
     </CreditContext.Provider>

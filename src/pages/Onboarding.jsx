@@ -3,13 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertCircle, RotateCcw } from 'lucide-react'
 import Welcome from '../components/onboarding/Welcome'
-import PhotoCapture from '../components/onboarding/PhotoCapture'
-import InspirationCapture from '../components/onboarding/InspirationCapture'
-import ShapeSelector from '../components/onboarding/ShapeSelector'
-import StyleSelector from '../components/onboarding/StyleSelector'
-import LengthSelector from '../components/onboarding/LengthSelector'
-import Processing from '../components/onboarding/Processing'
 import BlurredResult from '../components/onboarding/BlurredResult'
+import ManicureSelectionSteps from '../components/funnel/ManicureSelectionSteps'
 import FunnelSignup from '../components/onboarding/FunnelSignup'
 import FunnelPricing from '../components/onboarding/FunnelPricing'
 import FunnelCheckout from '../components/onboarding/FunnelCheckout'
@@ -31,23 +26,13 @@ import {
 } from '../lib/funnelSession'
 import { FUNNEL_STEP_PATH, ROUTES, funnelStepFromPath } from '../lib/routes'
 import { trackEvent } from '../lib/radar'
-
-const INSPO_DEFAULTS = { shape: 'oval', style: 'nailart', length: 'medium' }
-
-function buildGenPayload(data, overrides = {}) {
-  const hasInspo = !!data.inspirationPhoto
-  return {
-    photo: data.photo,
-    mode: hasInspo ? 'inspiration' : 'onboarding',
-    shape: data.shape,
-    style: data.style,
-    length: data.length,
-    customNote: data.customNote,
-    inspirationPhoto: data.inspirationPhoto,
-    outfitPhoto: data.outfitPhoto,
-    ...overrides,
-  }
-}
+import {
+  buildGenPayload,
+  EMPTY_MANICURE_DATA,
+  getManicureProgressPercent,
+  INSPO_DEFAULTS,
+  MANICURE_SELECTION_STEPS,
+} from '../lib/manicureFunnel'
 
 export default function Onboarding() {
   const navigate = useNavigate()
@@ -67,15 +52,7 @@ export default function Onboarding() {
   const [skipStyleSteps, setSkipStyleSteps] = useState(false)
   const [isRealGeneration, setIsRealGeneration] = useState(false)
 
-  const [data, setData] = useState({
-    photo: null,
-    shape: null,
-    style: null,
-    length: null,
-    customNote: '',
-    inspirationPhoto: null,
-    outfitPhoto: null,
-  })
+  const [data, setData] = useState(EMPTY_MANICURE_DATA)
 
   const goTo = useCallback((nextStep, { replace = false } = {}) => {
     setStep(nextStep)
@@ -263,13 +240,8 @@ export default function Onboarding() {
     goTo('pricing', { replace: true })
   }
 
-  const showProgress = ['photo', 'inspiration', 'shape', 'style', 'length'].includes(step)
-  const progressSteps = skipStyleSteps
-    ? ['photo', 'inspiration']
-    : ['photo', 'inspiration', 'shape', 'style', 'length']
-  const progressPercent = showProgress
-    ? ((progressSteps.indexOf(step) + 1) / progressSteps.length) * 100
-    : 0
+  const showProgress = MANICURE_SELECTION_STEPS.includes(step)
+  const progressPercent = getManicureProgressPercent(step, skipStyleSteps)
 
   if (generationError) {
     return (
@@ -301,61 +273,23 @@ export default function Onboarding() {
       case 'welcome':
         return <Welcome onNext={() => goTo('photo')} />
       case 'photo':
-        return (
-          <PhotoCapture
-            onNext={(photo) => {
-              if (photo) setData((d) => ({ ...d, photo }))
-              goTo('inspiration')
-            }}
-            onBack={() => goTo('welcome')}
-            onPhotoSelect={(photo) => setData((d) => ({ ...d, photo }))}
-          />
-        )
       case 'inspiration':
-        return (
-          <InspirationCapture
-            onNext={handleInspirationNext}
-            onSkip={handleInspirationSkip}
-            onBack={() => goTo('photo')}
-            onInspirationSelect={(inspirationPhoto) => setData((d) => ({ ...d, inspirationPhoto }))}
-          />
-        )
       case 'shape':
-        return (
-          <ShapeSelector
-            onNext={() => goTo('style')}
-            onBack={() => goTo('inspiration')}
-            selected={data.shape}
-            onSelect={(shape) => setData((d) => ({ ...d, shape }))}
-          />
-        )
       case 'style':
-        return (
-          <StyleSelector
-            onNext={() => goTo('length')}
-            onBack={() => goTo('shape')}
-            selected={data.style}
-            onSelect={(style) => setData((d) => ({ ...d, style, inspirationPhoto: style !== 'nailart' ? null : d.inspirationPhoto }))}
-            customNote={data.customNote}
-            onCustomNote={(customNote) => setData((d) => ({ ...d, customNote }))}
-            inspirationPhoto={data.inspirationPhoto}
-            onInspirationPhoto={(inspirationPhoto) => setData((d) => ({ ...d, inspirationPhoto }))}
-          />
-        )
       case 'length':
-        return (
-          <LengthSelector
-            onNext={handleLengthNext}
-            onBack={() => goTo('style')}
-            selected={data.length}
-            onSelect={(length) => setData((d) => ({ ...d, length }))}
-          />
-        )
       case 'processing':
         return (
-          <Processing
-            fake={!isRealGeneration}
-            messages={isRealGeneration ? undefined : [
+          <ManicureSelectionSteps
+            step={step}
+            data={data}
+            setData={setData}
+            goTo={goTo}
+            onPhotoBack={() => goTo('welcome')}
+            onInspirationNext={handleInspirationNext}
+            onInspirationSkip={handleInspirationSkip}
+            onLengthNext={handleLengthNext}
+            processingFake={!isRealGeneration}
+            processingMessages={isRealGeneration ? undefined : [
               'Analyse de ta main...',
               'Création de ton design...',
               'Presque prête...',

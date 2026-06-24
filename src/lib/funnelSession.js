@@ -125,11 +125,15 @@ export function mapVisualizationToResult(viz) {
   if (!viz) return null
   return {
     id: viz.id,
+    original_image_url: viz.original_image_url,
     originalImage: viz.original_image_url,
     resultImage: viz.result_image_url,
+    result_image_url: viz.result_image_url,
     shape: viz.shape,
     style: viz.style,
     length: viz.length,
     createdAt: viz.created_at,
+    created_at: viz.created_at,
+    status: viz.status,
   }
 }
