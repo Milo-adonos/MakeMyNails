@@ -17,7 +17,7 @@ const FACTS = [
   'Envoyer ton design à ta nail artist réduit les erreurs de 90% 📲',
 ]
 
-export default function Processing({ messages = DEFAULT_MESSAGES, fake = false }) {
+export default function Processing({ messages = DEFAULT_MESSAGES, fake = false, hint }) {
   const [messageIndex, setMessageIndex] = useState(0)
   const [factIndex, setFactIndex] = useState(0)
 
@@ -68,9 +68,9 @@ export default function Processing({ messages = DEFAULT_MESSAGES, fake = false }
             />
           </div>
           <p className="text-center text-xs text-brown-light/50 mt-4">
-            {fake
+            {hint || (fake
               ? 'Préparation de ton aperçu — 8 secondes'
-              : 'Génération en cours — environ 15 à 30 secondes'}
+              : 'Génération en cours — environ 15 à 30 secondes')}
           </p>
         </div>
 

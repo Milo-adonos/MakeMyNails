@@ -1,31 +1,22 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { getOriginalDisplayUrl } from '../../lib/originalImage'
-import { createBlurredPreview, createFunnelPaywallPreview } from '../../lib/previewImage'
+import { createBlurredPreview } from '../../lib/previewImage'
 
-const PAYWALL_PREVIEW_FILTER = 'blur(64px) saturate(0.25) contrast(0.75) brightness(1.08)'
+const PAYWALL_PREVIEW_BLUR = 'blur(8px)'
 const STANDARD_PREVIEW_FILTER = 'blur(18px)'
 
 export default function BlurredResult({ result, onUnlock }) {
   const isPaywallPreview = !!result?.pendingGeneration
   const fullResultImg = result?.result_image_url || result?.resultImage
-  const storedPreview = result?.previewImage
+  const previewSource = result?.previewImage || fullResultImg
   const originalImg = getOriginalDisplayUrl(result)
-  const [previewSrc, setPreviewSrc] = useState(storedPreview || null)
+  const [previewSrc, setPreviewSrc] = useState(previewSource || null)
   const [imageLoaded, setImageLoaded] = useState(false)
 
   useEffect(() => {
-    if (storedPreview) {
-      setPreviewSrc(storedPreview)
-      return
-    }
-
-    if (isPaywallPreview) {
-      const source = result?.originalImageData || result?.originalImage || originalImg
-      if (!source) return
-      createFunnelPaywallPreview(source).then((src) => {
-        if (src) setPreviewSrc(src)
-      })
+    if (previewSource) {
+      setPreviewSrc(previewSource)
       return
     }
 
@@ -33,9 +24,9 @@ export default function BlurredResult({ result, onUnlock }) {
     createBlurredPreview(fullResultImg).then((src) => {
       if (src) setPreviewSrc(src)
     })
-  }, [fullResultImg, storedPreview, isPaywallPreview, result?.originalImageData, result?.originalImage, originalImg])
+  }, [fullResultImg, previewSource])
 
-  const displaySrc = previewSrc || (isPaywallPreview ? null : originalImg)
+  const displaySrc = previewSrc || originalImg
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-offwhite to-nude-light/30 px-4 py-8 flex flex-col">
@@ -48,17 +39,13 @@ export default function BlurredResult({ result, onUnlock }) {
                 alt="Aperçu flouté"
                 draggable={false}
                 onContextMenu={(e) => e.preventDefault()}
-                className={`w-full h-full object-cover ${isPaywallPreview ? 'scale-[1.35]' : 'scale-110'}`}
-                style={{ filter: isPaywallPreview ? PAYWALL_PREVIEW_FILTER : STANDARD_PREVIEW_FILTER }}
+                className="w-full h-full object-cover"
+                style={{ filter: isPaywallPreview ? PAYWALL_PREVIEW_BLUR : STANDARD_PREVIEW_FILTER }}
                 onLoad={() => setImageLoaded(true)}
               />
-              {imageLoaded && (
+              {imageLoaded && isPaywallPreview && (
                 <div
-                  className={`absolute inset-0 pointer-events-none ${
-                    isPaywallPreview
-                      ? 'bg-offwhite/65 backdrop-blur-2xl'
-                      : 'bg-offwhite/30'
-                  }`}
+                  className="absolute inset-0 pointer-events-none bg-offwhite/20"
                   aria-hidden="true"
                 />
               )}

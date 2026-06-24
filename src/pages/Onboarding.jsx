@@ -9,7 +9,7 @@ import FunnelSignup from '../components/onboarding/FunnelSignup'
 import FunnelPricing from '../components/onboarding/FunnelPricing'
 import FunnelCheckout from '../components/onboarding/FunnelCheckout'
 import {
-  buildFakeFunnelPreview,
+  buildFunnelPreview,
   serializeFunnelGenPayload,
   generateFromFunnelPayload,
 } from '../lib/api'
@@ -127,7 +127,7 @@ export default function Onboarding() {
     setGenerationError(null)
     processingRef.current = (async () => {
       const [preview, stored] = await Promise.all([
-        buildFakeFunnelPreview(genData),
+        buildFunnelPreview(genData),
         serializeFunnelGenPayload(genData),
       ])
       persistFunnelGenData(stored)
@@ -288,12 +288,13 @@ export default function Onboarding() {
             onInspirationNext={handleInspirationNext}
             onInspirationSkip={handleInspirationSkip}
             onLengthNext={handleLengthNext}
-            processingFake={!isRealGeneration}
-            processingMessages={isRealGeneration ? undefined : [
+            processingFake={false}
+            processingMessages={[
               'Analyse de ta main...',
-              'Création de ton design...',
+              'Création de ton aperçu...',
               'Presque prête...',
             ]}
+            processingHint="Génération rapide — moins de 10 secondes"
           />
         )
       case 'result':

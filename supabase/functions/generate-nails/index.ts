@@ -1,31 +1,30 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const FAL_MODEL = 'openai/gpt-image-2/edit'
+const FAL_MODEL = 'fal-ai/nano-banana-2/edit'
 const FAL_QUEUE = `https://queue.fal.run/${FAL_MODEL}`
 const FAL_RUN = `https://fal.run/${FAL_MODEL}`
 
-/** GPT Image 2 edit — sortie 2K (plus grand côté = 2048px, multiples de 16). */
-function mapAspectRatioToImageSize(aspectRatio: string): { width: number; height: number } {
-  switch (aspectRatio) {
-    case '1:1':
-      return { width: 2048, height: 2048 }
-    case '3:4':
-      return { width: 1536, height: 2048 }
-    case '2:3':
-      return { width: 1360, height: 2048 }
-    case '4:3':
-      return { width: 2048, height: 1536 }
-    case '3:2':
-      return { width: 2048, height: 1360 }
-    case '9:16':
-      return { width: 1152, height: 2048 }
-    case '16:9':
-      return { width: 2048, height: 1152 }
-    case 'auto':
-    default:
-      return { width: 1536, height: 2048 }
+const KIE_AI_API = 'https://api.kie.ai/api/v1'
+const KIE_FLUX_KONTEXT_GENERATE = `${KIE_AI_API}/flux/kontext/generate`
+const KIE_FLUX_KONTEXT_MODEL = 'flux-kontext-pro'
+const KIE_GPT_IMAGE_2_MODEL = 'gpt-image-2-image-to-image'
+
+const PREVIEW_PROMPT_INSPO =
+  'Replace the nails in image 1 with the nails from image 2. Quality does not matter.'
+
+function mapAspectRatio(aspectRatio: string): string {
+  const map: Record<string, string> = {
+    '1:1': '1:1',
+    '2:3': '2:3',
+    '3:2': '3:2',
+    '3:4': '3:4',
+    '4:3': '4:3',
+    '9:16': '9:16',
+    '16:9': '16:9',
+    auto: 'auto',
   }
+  return map[aspectRatio] || 'auto'
 }
 
 const corsHeaders = {
@@ -34,6 +33,7 @@ const corsHeaders = {
 }
 
 type GenerationMode = 'inspiration' | 'onboarding' | 'emma'
+type GenerationSource = 'preview' | 'post_payment' | string
 
 const SHAPE_LABELS: Record<string, string> = {
   almond: 'almond',
@@ -88,6 +88,17 @@ const PROMPT_RULES = `ABSOLUTE RULES FOR ALL 3 CASES:
 
 — Ultra realistic, 2K quality, same format as Image 1.`
 
+function buildPreviewPrompt(
+  mode: GenerationMode,
+  style?: string,
+  customNote?: string,
+): string {
+  if (mode === 'inspiration') return PREVIEW_PROMPT_INSPO
+  const styleLabel = STYLE_LABELS[style?.toLowerCase() || ''] || style || 'French tip'
+  const color = customNote?.trim() || styleLabel
+  return `Apply ${color} ${styleLabel} nail art on the nails in this image. Keep everything else identical. Quality does not matter.`
+}
+
 function buildCase2Prompt(
   shape: string,
   style: string,
@@ -120,7 +131,7 @@ function buildCase3Prompt(
   return `CASE 3 — EMMA AI: No reference image. The user is wearing ${outfitDescription} for ${occasionText}. Select the most complementary and elegant nail design for this outfit and occasion. Consider the colors, style and formality of the outfit.`
 }
 
-function buildPrompt(
+function buildFinalPrompt(
   mode: GenerationMode,
   shape?: string,
   style?: string,
@@ -146,14 +157,22 @@ function buildPrompt(
 }
 
 function buildFormat(
+  source: GenerationSource,
   mode: string,
   aspectRatio: string,
   shape?: string,
   style?: string,
   length?: string,
 ): string {
-  const size = mapAspectRatioToImageSize(aspectRatio)
-  const sizeLabel = `2K ${size.width}x${size.height}`
+  const ar = mapAspectRatio(aspectRatio)
+  let sizeLabel: string
+  if (source === 'preview') {
+    sizeLabel = `flux-kontext-pro · preview · ${ar}`
+  } else if (source === 'post_payment') {
+    sizeLabel = `gpt-image-2 · 2K · ${ar}`
+  } else {
+    sizeLabel = `nano-banana-2 · 2K · ${ar}`
+  }
   if (mode === 'onboarding' && shape && style && length) {
     return `${mode} · ${shape}/${style}/${length} · ${sizeLabel}`
   }
@@ -163,6 +182,33 @@ function buildFormat(
 function toDataUri(base64: string): string {
   if (base64.startsWith('data:')) return base64
   return `data:image/jpeg;base64,${base64}`
+}
+
+function parseDataUri(dataUri: string): { mime: string; bytes: Uint8Array; ext: string } {
+  const match = dataUri.match(/^data:([^;]+);base64,(.+)$/)
+  if (!match) throw new Error('Invalid image data URI')
+  const mime = match[1]
+  const ext = mime.includes('png') ? 'png' : mime.includes('webp') ? 'webp' : 'jpg'
+  const binary = atob(match[2])
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return { mime, bytes, ext }
+}
+
+async function uploadDataUriToStorage(
+  supabase: ReturnType<typeof createClient>,
+  dataUri: string,
+  label: string,
+): Promise<string> {
+  const { mime, bytes, ext } = parseDataUri(dataUri)
+  const path = `kie-input/${label}-${crypto.randomUUID()}.${ext}`
+  const { error } = await supabase.storage.from('nail-images').upload(path, bytes, {
+    contentType: mime,
+    upsert: true,
+  })
+  if (error) throw new Error(`Storage upload failed: ${error.message}`)
+  const { data } = supabase.storage.from('nail-images').getPublicUrl(path)
+  return data.publicUrl
 }
 
 async function getGenerationCost(supabase: ReturnType<typeof createClient>): Promise<number> {
@@ -182,10 +228,185 @@ async function logGeneration(
   }
 }
 
-function extractResultUrl(json: { images?: Array<{ url?: string }> }): string {
+function extractFalResultUrl(json: { images?: Array<{ url?: string }> }): string {
   const url = json.images?.[0]?.url
   if (!url) throw new Error('No result image URL')
   return url
+}
+
+function extractKieResultUrl(resultJson: string | undefined): string {
+  if (!resultJson) throw new Error('Kie.ai returned no result')
+  const parsed = JSON.parse(resultJson)
+  const url = parsed?.resultUrls?.[0] || parsed?.images?.[0]?.url || parsed?.images?.[0]
+  if (!url || typeof url !== 'string') throw new Error('No result image URL from Kie.ai')
+  return url
+}
+
+async function pollKieTask(apiKey: string, taskId: string, maxAttempts: number, intervalMs: number): Promise<string> {
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise((r) => setTimeout(r, intervalMs))
+
+    const statusRes = await fetch(`${KIE_AI_API}/jobs/recordInfo?taskId=${taskId}`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    })
+    const statusJson = await statusRes.json()
+    const state = statusJson.data?.state
+
+    if (state === 'success') {
+      return extractKieResultUrl(statusJson.data?.resultJson)
+    }
+
+    if (state === 'fail') {
+      throw new Error(statusJson.data?.failMsg || statusJson.msg || 'Kie.ai generation failed')
+    }
+  }
+
+  throw new Error('Kie.ai generation timed out')
+}
+
+async function uploadImagesForKie(
+  supabase: ReturnType<typeof createClient>,
+  imageDataUris: string[],
+  prefix: string,
+): Promise<string[]> {
+  const urls: string[] = []
+  for (let i = 0; i < imageDataUris.length; i++) {
+    urls.push(await uploadDataUriToStorage(supabase, imageDataUris[i], `${prefix}-${i + 1}`))
+  }
+  return urls
+}
+
+function bytesToDataUri(bytes: Uint8Array, mime = 'image/jpeg'): string {
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+  return `data:${mime};base64,${btoa(binary)}`
+}
+
+/** Side-by-side composite for Flux (single inputImage) — image 1 left, image 2 right. */
+async function compositePreviewImages(dataUris: string[]): Promise<string> {
+  if (dataUris.length <= 1) return dataUris[0]
+
+  const { Image } = await import('https://deno.land/x/imagescript@1.3.0/mod.ts')
+  const decoded = await Promise.all(dataUris.slice(0, 2).map(async (uri) => {
+    const { bytes } = parseDataUri(uri)
+    return await Image.decode(bytes)
+  }))
+
+  const targetH = 256
+  const resized = decoded.map((img) => img.resize(Image.RESIZE_AUTO, targetH))
+  const totalW = resized.reduce((sum, img) => sum + img.width, 0)
+  const canvas = new Image(totalW, targetH)
+  let x = 0
+  for (const img of resized) {
+    canvas.composite(img, x, 0)
+    x += img.width
+  }
+
+  return bytesToDataUri(await canvas.encodeJPEG(65))
+}
+
+async function pollFluxKontextTask(apiKey: string, taskId: string): Promise<string> {
+  for (let i = 0; i < 25; i++) {
+    await new Promise((r) => setTimeout(r, 800))
+
+    const statusRes = await fetch(
+      `${KIE_AI_API}/flux/kontext/record-info?taskId=${taskId}`,
+      { headers: { 'Authorization': `Bearer ${apiKey}` } },
+    )
+    const statusJson = await statusRes.json()
+    const flag = statusJson.data?.successFlag
+
+    if (flag === 1) {
+      const url = statusJson.data?.response?.resultImageUrl
+      if (!url) throw new Error('Flux Kontext returned no result image URL')
+      return url
+    }
+
+    if (flag === 2 || flag === 3) {
+      throw new Error(
+        statusJson.data?.errorMessage || statusJson.msg || 'Flux Kontext generation failed',
+      )
+    }
+  }
+
+  throw new Error('Flux Kontext generation timed out')
+}
+
+async function generateWithKieFluxPreview(
+  apiKey: string,
+  supabase: ReturnType<typeof createClient>,
+  imageDataUris: string[],
+  prompt: string,
+  mode: GenerationMode,
+): Promise<string> {
+  const sourceUri = mode === 'inspiration' && imageDataUris.length >= 2
+    ? await compositePreviewImages(imageDataUris)
+    : imageDataUris[0]
+
+  const inputImage = await uploadDataUriToStorage(supabase, sourceUri, 'flux-preview')
+
+  const createRes = await fetch(KIE_FLUX_KONTEXT_GENERATE, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      prompt,
+      inputImage,
+      model: KIE_FLUX_KONTEXT_MODEL,
+      outputFormat: 'jpeg',
+      promptUpsampling: false,
+      enableTranslation: false,
+      safetyTolerance: 2,
+    }),
+  })
+
+  const createJson = await createRes.json()
+  if (createJson.code !== 200) {
+    throw new Error(createJson.msg || createJson.message || 'Flux Kontext preview failed')
+  }
+
+  const taskId = createJson.data?.taskId
+  if (!taskId) throw new Error('Flux Kontext did not return a taskId')
+
+  return pollFluxKontextTask(apiKey, taskId)
+}
+
+async function generateWithKieGptImage2(
+  apiKey: string,
+  supabase: ReturnType<typeof createClient>,
+  imageDataUris: string[],
+  prompt: string,
+): Promise<string> {
+  const inputUrls = await uploadImagesForKie(supabase, imageDataUris, 'final')
+
+  const createRes = await fetch(`${KIE_AI_API}/jobs/createTask`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: KIE_GPT_IMAGE_2_MODEL,
+      input: {
+        prompt,
+        input_urls: inputUrls,
+        aspect_ratio: 'auto',
+        resolution: '2K',
+      },
+    }),
+  })
+
+  const createJson = await createRes.json()
+  if (createJson.code !== 200) {
+    throw new Error(createJson.msg || createJson.message || 'Kie.ai createTask failed')
+  }
+
+  const taskId = createJson.data?.taskId
+  if (!taskId) throw new Error('Kie.ai did not return a taskId')
+
+  return pollKieTask(apiKey, taskId, 90, 2000)
 }
 
 async function generateWithFal(
@@ -197,10 +418,11 @@ async function generateWithFal(
   const input = {
     prompt,
     image_urls: imageUrls,
-    image_size: mapAspectRatioToImageSize(aspectRatio),
-    quality: 'high',
+    aspect_ratio: mapAspectRatio(aspectRatio),
+    resolution: '2K',
     output_format: 'png',
     num_images: 1,
+    limit_generations: true,
   }
 
   const headers = {
@@ -215,7 +437,7 @@ async function generateWithFal(
   })
 
   if (directRes.ok) {
-    return extractResultUrl(await directRes.json())
+    return extractFalResultUrl(await directRes.json())
   }
 
   const queueRes = await fetch(FAL_QUEUE, {
@@ -232,8 +454,8 @@ async function generateWithFal(
   const requestId = queueJson.request_id
   if (!requestId) throw new Error('Fal did not return a request_id')
 
-  for (let i = 0; i < 60; i++) {
-    await new Promise((r) => setTimeout(r, 1000))
+  for (let i = 0; i < 45; i++) {
+    await new Promise((r) => setTimeout(r, 800))
 
     const statusRes = await fetch(
       `${FAL_QUEUE}/requests/${requestId}/status`,
@@ -247,7 +469,7 @@ async function generateWithFal(
         { headers: { 'Authorization': `Key ${apiKey}` } },
       )
       if (!resultRes.ok) throw new Error('Failed to fetch Fal result')
-      return extractResultUrl(await resultRes.json())
+      return extractFalResultUrl(await resultRes.json())
     }
 
     if (statusJson.status === 'FAILED') {
@@ -272,9 +494,6 @@ serve(async (req) => {
   let pendingLog: Record<string, unknown> | null = null
 
   try {
-    const falKey = Deno.env.get('FAL_KEY')
-    if (!falKey) throw new Error('FAL_KEY not configured')
-
     const body = await req.json()
     const {
       photoBase64,
@@ -307,8 +526,12 @@ serve(async (req) => {
       userId?: string
       userEmail?: string
       visualizationId?: string
-      source?: string
+      source?: GenerationSource
     }
+
+    const isPreview = source === 'preview'
+    const isPostPayment = source === 'post_payment'
+    const effectiveAspectRatio = (isPreview || isPostPayment) ? 'auto' : aspectRatio
 
     const costEur = await getGenerationCost(supabase)
 
@@ -321,8 +544,8 @@ serve(async (req) => {
       style: style || null,
       length: length || null,
       custom_note: customNote || null,
-      aspect_ratio: aspectRatio,
-      format: buildFormat(mode, aspectRatio, shape, style, length),
+      aspect_ratio: effectiveAspectRatio,
+      format: buildFormat(source || mode, mode, effectiveAspectRatio, shape, style, length),
       estimated_cost_eur: costEur,
       source: source || mode,
     }
@@ -349,35 +572,75 @@ serve(async (req) => {
       })
     }
 
-    if (mode === 'emma' && !occasion && !occasionLabel) {
+    if (!isPreview && mode === 'emma' && !occasion && !occasionLabel) {
       return new Response(JSON.stringify({ error: 'Missing occasion' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const imageUrls = [toDataUri(photoBase64)]
+    const imageDataUris = [toDataUri(photoBase64)]
 
     if (mode === 'inspiration' && inspirationBase64) {
-      imageUrls.push(toDataUri(inspirationBase64))
+      imageDataUris.push(toDataUri(inspirationBase64))
     }
 
-    if (outfitBase64) {
-      imageUrls.push(toDataUri(outfitBase64))
+    if (!isPreview && outfitBase64) {
+      imageDataUris.push(toDataUri(outfitBase64))
     }
 
-    let prompt = buildPrompt(
-      mode,
-      shape,
-      style,
-      length,
-      customNote,
-      occasion,
-      occasionLabel,
-      !!outfitBase64,
-    )
+    let prompt: string
+    let resultImageUrl: string
+    let provider: string
 
-    const resultImageUrl = await generateWithFal(falKey, imageUrls, prompt, aspectRatio)
+    if (isPreview) {
+      const kieKey = Deno.env.get('KIE_AI_API_KEY')
+      if (!kieKey) throw new Error('KIE_AI_API_KEY not configured')
+      prompt = buildPreviewPrompt(mode, style, customNote)
+      resultImageUrl = await generateWithKieFluxPreview(
+        kieKey,
+        supabase,
+        imageDataUris,
+        prompt,
+        mode,
+      )
+      provider = 'flux-kontext-preview'
+    } else if (isPostPayment) {
+      const kieKey = Deno.env.get('KIE_AI_API_KEY')
+      if (!kieKey) throw new Error('KIE_AI_API_KEY not configured')
+      prompt = buildFinalPrompt(
+        mode,
+        shape,
+        style,
+        length,
+        customNote,
+        occasion,
+        occasionLabel,
+        !!outfitBase64,
+      )
+      resultImageUrl = await generateWithKieGptImage2(kieKey, supabase, imageDataUris, prompt)
+      provider = 'kie-final'
+    } else {
+      const falKey = Deno.env.get('FAL_KEY')
+      if (!falKey) throw new Error('FAL_KEY not configured')
+      prompt = buildFinalPrompt(
+        mode,
+        shape,
+        style,
+        length,
+        customNote,
+        occasion,
+        occasionLabel,
+        !!outfitBase64,
+      )
+      resultImageUrl = await generateWithFal(
+        falKey,
+        imageDataUris,
+        prompt,
+        effectiveAspectRatio,
+      )
+      provider = 'fal'
+    }
 
     await logGeneration(supabase, {
       ...logBase,
@@ -388,7 +651,7 @@ serve(async (req) => {
     })
 
     return new Response(
-      JSON.stringify({ resultImageUrl, mode }),
+      JSON.stringify({ resultImageUrl, mode, provider }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   } catch (err) {

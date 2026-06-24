@@ -19,6 +19,7 @@ required=(
   STRIPE_PRICE_PREMIUM
   STRIPE_PRICE_EXCLUSIF_IA
   FAL_KEY
+  KIE_AI_API_KEY
   APP_URL
 )
 
@@ -56,6 +57,7 @@ required = [
     "STRIPE_PRICE_PREMIUM",
     "STRIPE_PRICE_EXCLUSIF_IA",
     "FAL_KEY",
+    "KIE_AI_API_KEY",
     "APP_URL",
 ]
 optional = [
@@ -93,6 +95,7 @@ push_via_cli() {
     "STRIPE_PRICE_PREMIUM=$STRIPE_PRICE_PREMIUM"
     "STRIPE_PRICE_EXCLUSIF_IA=$STRIPE_PRICE_EXCLUSIF_IA"
     "FAL_KEY=$FAL_KEY"
+    "KIE_AI_API_KEY=$KIE_AI_API_KEY"
     "APP_URL=$APP_URL"
   )
   for key in "${optional[@]}"; do

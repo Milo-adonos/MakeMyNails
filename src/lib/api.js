@@ -63,7 +63,7 @@ async function imageToBase64(source, maxPx = 2048) {
       canvas.getContext('2d').drawImage(img, 0, 0, w, h)
 
       const mime = blob.type === 'image/png' ? 'image/png' : 'image/jpeg'
-      const quality = mime === 'image/png' ? undefined : 0.98
+      const quality = maxPx <= 512 ? 0.72 : mime === 'image/png' ? undefined : 0.98
       canvas.toBlob(
         (output) => {
           const reader = new FileReader()
@@ -103,6 +103,8 @@ export async function generateNailVisualization({
   outfitPhoto,
   occasion,
   occasionLabel,
+  aspectRatio: aspectRatioOverride,
+  source: sourceOverride,
 }, visualizationId = null) {
   if (!photo) throw new Error('Aucune photo fournie. Veuillez reprendre depuis le début.')
 
@@ -122,7 +124,9 @@ export async function generateNailVisualization({
     }
   }
 
-  const { base64: photoBase64, aspectRatio } = await imageToBase64(photo, 2048)
+  const { base64: photoBase64, aspectRatio: detectedAspectRatio } = await imageToBase64(photo, 2048)
+  const aspectRatio = aspectRatioOverride || detectedAspectRatio
+  const source = sourceOverride || mode
   const { base64: originalImageData } = await imageToBase64(photo, 720)
 
   let inspirationBase64 = null
@@ -162,7 +166,7 @@ export async function generateNailVisualization({
       userId,
       userEmail,
       visualizationId,
-      source: mode,
+      source,
     }),
   })
 
@@ -182,26 +186,75 @@ export async function generateNailVisualization({
   }
 }
 
-/** Faux chargement funnel — aucun appel fal.ai, aperçu flouté depuis la photo originale. */
-export async function buildFakeFunnelPreview(genData) {
-  await new Promise((resolve) => setTimeout(resolve, FAKE_FUNNEL_LOADING_MS))
+/** Aperçu funnel pré-paiement — Kie.ai Flux Kontext Pro, basse résolution, prompt minimal. */
+export async function buildFunnelPreview(genData) {
+  if (import.meta.env.VITE_MOCK_GENERATION === 'true') {
+    await new Promise((resolve) => setTimeout(resolve, FAKE_FUNNEL_LOADING_MS))
+    const { base64: originalImageData } = await imageToBase64(genData.photo, 720)
+    const previewImage = await createFunnelPaywallPreview(originalImageData || genData.photo)
+    const mode = genData.mode || (genData.inspirationPhoto ? 'inspiration' : 'onboarding')
+    return {
+      pendingGeneration: true,
+      originalImage: genData.photo,
+      originalImageData,
+      previewImage,
+      shape: genData.shape,
+      style: genData.style,
+      length: genData.length,
+      mode,
+      createdAt: new Date().toISOString(),
+    }
+  }
 
+  const { base64: photoBase64 } = await imageToBase64(genData.photo, 384)
   const { base64: originalImageData } = await imageToBase64(genData.photo, 720)
-  const previewSource = originalImageData || genData.photo
-  const previewImage = await createFunnelPaywallPreview(previewSource)
+
+  let inspirationBase64 = null
+  if (genData.inspirationPhoto) {
+    inspirationBase64 = (await imageToBase64(genData.inspirationPhoto, 384)).base64
+  }
+
   const mode = genData.mode || (genData.inspirationPhoto ? 'inspiration' : 'onboarding')
+
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-nails`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({
+      photoBase64,
+      mode,
+      shape: genData.shape,
+      style: genData.style,
+      length: genData.length,
+      customNote: genData.customNote,
+      inspirationBase64,
+      aspectRatio: 'auto',
+      source: 'preview',
+    }),
+  })
+
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || 'Preview generation failed')
 
   return {
     pendingGeneration: true,
     originalImage: genData.photo,
     originalImageData,
-    previewImage,
+    previewImage: data.resultImageUrl,
+    resultImage: data.resultImageUrl,
     shape: genData.shape,
     style: genData.style,
     length: genData.length,
     mode,
     createdAt: new Date().toISOString(),
   }
+}
+
+/** @deprecated Utiliser buildFunnelPreview */
+export async function buildFakeFunnelPreview(genData) {
+  return buildFunnelPreview(genData)
 }
 
 /** Sérialise le funnel pour génération réelle après paiement (base64, survit à Stripe). */
@@ -235,7 +288,7 @@ export async function serializeFunnelGenPayload(genData) {
   }
 }
 
-/** Génération réelle fal.ai à partir des données funnel persistées. */
+/** Génération finale post-paiement (Kie.ai GPT Image 2) à partir des données funnel persistées. */
 export async function generateFromFunnelPayload(stored, visualizationId = null) {
   if (!stored?.photoDataUrl) throw new Error('Données du funnel introuvables. Recommence depuis le début.')
 
@@ -250,5 +303,7 @@ export async function generateFromFunnelPayload(stored, visualizationId = null) 
     outfitPhoto: stored.outfitDataUrl,
     occasion: stored.occasion,
     occasionLabel: stored.occasionLabel,
+    aspectRatio: 'auto',
+    source: 'post_payment',
   }, visualizationId)
 }
