@@ -13,11 +13,22 @@ import BlurredResult from '../components/onboarding/BlurredResult'
 import FunnelSignup from '../components/onboarding/FunnelSignup'
 import FunnelPricing from '../components/onboarding/FunnelPricing'
 import FunnelCheckout from '../components/onboarding/FunnelCheckout'
-import { generateNailVisualization } from '../lib/api'
+import {
+  buildFakeFunnelPreview,
+  serializeFunnelGenPayload,
+  generateFromFunnelPayload,
+} from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useCredits } from '../contexts/CreditContext'
-import { persistFunnelResult, getFunnelResult, persistFunnelStep, getFunnelStep } from '../lib/funnelSession'
-import { createBlurredPreview } from '../lib/previewImage'
+import {
+  persistFunnelResult,
+  getFunnelResult,
+  persistFunnelStep,
+  getFunnelStep,
+  persistFunnelGenData,
+  getFunnelGenData,
+  clearFunnelSession,
+} from '../lib/funnelSession'
 import { FUNNEL_STEP_PATH, ROUTES, funnelStepFromPath } from '../lib/routes'
 import { trackEvent } from '../lib/radar'
 
@@ -43,7 +54,7 @@ export default function Onboarding() {
   const location = useLocation()
   const { isAuthenticated } = useAuth()
   const { createVisualization, completeVisualization, uploadBlobUrl, isSubscribed } = useCredits()
-  const generationRef = useRef(null)
+  const processingRef = useRef(null)
   const preselectHandled = useRef(false)
   const restoredRef = useRef(false)
 
@@ -54,6 +65,7 @@ export default function Onboarding() {
   const [result, setResult] = useState(null)
   const [generationError, setGenerationError] = useState(null)
   const [skipStyleSteps, setSkipStyleSteps] = useState(false)
+  const [isRealGeneration, setIsRealGeneration] = useState(false)
 
   const [data, setData] = useState({
     photo: null,
@@ -103,49 +115,55 @@ export default function Onboarding() {
     if (result) persistFunnelResult(result)
   }, [result])
 
-  const runGeneration = useCallback(async (genData) => {
+  const runRealGeneration = useCallback(async (stored) => {
     let vizId = null
-    if (isAuthenticated && isSubscribed) {
-      const originalImageUrl = await uploadBlobUrl(genData.photo)
-      const vizResult = await createVisualization({
-        shape: genData.shape,
-        style: genData.style,
-        length: genData.length,
-        originalImageUrl,
-      })
-      vizId = vizResult?.visualization_id
-    }
+    const originalImageUrl = await uploadBlobUrl(stored.photoDataUrl)
+    const vizResult = await createVisualization({
+      shape: stored.shape,
+      style: stored.style,
+      length: stored.length,
+      originalImageUrl,
+    })
+    vizId = vizResult?.visualization_id
 
-    const generated = await generateNailVisualization(genData, vizId)
+    const generated = await generateFromFunnelPayload(stored, vizId)
 
-    if (generated.resultImage) {
-      const previewImage = await createBlurredPreview(generated.resultImage)
-      if (previewImage) generated.previewImage = previewImage
-    }
-
-    if (isAuthenticated && isSubscribed && vizId && generated.resultImage) {
+    if (vizId && generated.resultImage) {
       await completeVisualization(vizId, generated.resultImage)
     }
 
+    trackEvent('generation_complete', {
+      mode: generated.mode || stored.mode || 'onboarding',
+      placement: 'funnel_post_payment',
+    })
+
     return generated
-  }, [isAuthenticated, isSubscribed, createVisualization, completeVisualization, uploadBlobUrl])
+  }, [createVisualization, completeVisualization, uploadBlobUrl])
 
   const enterProcessing = useCallback((genData) => {
     if (!genData.photo) {
       goTo('photo')
       return
     }
-    generationRef.current = runGeneration(genData)
-      .then((res) => {
-        setResult(res)
-        return res
-      })
-      .catch((err) => {
-        setGenerationError(err.message || 'Une erreur est survenue.')
-        throw err
-      })
+
+    setIsRealGeneration(false)
+    setGenerationError(null)
+    processingRef.current = (async () => {
+      const [preview, stored] = await Promise.all([
+        buildFakeFunnelPreview(genData),
+        serializeFunnelGenPayload(genData),
+      ])
+      persistFunnelGenData(stored)
+      setResult(preview)
+      return preview
+    })().catch((err) => {
+      setGenerationError(err.message || 'Une erreur est survenue.')
+      processingRef.current = null
+      throw err
+    })
+
     goTo('processing')
-  }, [runGeneration, goTo])
+  }, [goTo])
 
   useEffect(() => {
     if (preselectHandled.current) return
@@ -171,26 +189,24 @@ export default function Onboarding() {
   }, [location.state, enterProcessing, goTo])
 
   useEffect(() => {
-    if (step !== 'processing' || !generationRef.current) return
+    if (step !== 'processing' || !processingRef.current) return
 
     let cancelled = false
 
-    generationRef.current
+    processingRef.current
       .then((res) => {
         if (!cancelled && res) {
-          trackEvent('generation_complete', {
-            mode: res.mode || 'onboarding',
-            placement: 'funnel',
-          })
-          goTo('result')
+          if (!isRealGeneration) {
+            goTo('result')
+          }
         }
       })
       .catch(() => {
-        if (!cancelled) generationRef.current = null
+        if (!cancelled) processingRef.current = null
       })
 
     return () => { cancelled = true }
-  }, [step, goTo])
+  }, [step, goTo, isRealGeneration])
 
   const handleInspirationNext = (inspirationUrl) => {
     if (inspirationUrl) {
@@ -216,12 +232,34 @@ export default function Onboarding() {
     enterProcessing(genData)
   }
 
-  const handleUnlock = () => {
+  const handleUnlock = async () => {
     trackEvent('preview_unlock', { placement: 'funnel' })
+
     if (isAuthenticated && isSubscribed) {
-      navigate(ROUTES.dashboard, { state: { result, unlocked: true } })
+      const stored = getFunnelGenData()
+      if (!stored) {
+        setGenerationError('Données du funnel introuvables. Recommence depuis le début.')
+        return
+      }
+
+      setIsRealGeneration(true)
+      setGenerationError(null)
+      goTo('processing')
+
+      processingRef.current = runRealGeneration(stored)
+        .then((generated) => {
+          clearFunnelSession()
+          navigate(ROUTES.dashboard, { state: { result: generated, unlocked: true } })
+          return generated
+        })
+        .catch((err) => {
+          setGenerationError(err.message || 'La génération a échoué.')
+          processingRef.current = null
+          throw err
+        })
       return
     }
+
     goTo('pricing', { replace: true })
   }
 
@@ -245,7 +283,7 @@ export default function Onboarding() {
           <button
             onClick={() => {
               setGenerationError(null)
-              generationRef.current = null
+              processingRef.current = null
               goTo(skipStyleSteps ? 'inspiration' : 'length')
             }}
             className="w-full bg-brown text-offwhite py-4 rounded-2xl font-semibold flex items-center justify-center gap-2 hover:bg-brown-light transition-colors"
@@ -314,7 +352,16 @@ export default function Onboarding() {
           />
         )
       case 'processing':
-        return <Processing />
+        return (
+          <Processing
+            fake={!isRealGeneration}
+            messages={isRealGeneration ? undefined : [
+              'Analyse de ta main...',
+              'Création de ton design...',
+              'Presque prête...',
+            ]}
+          />
+        )
       case 'result':
         return <BlurredResult result={result} onUnlock={handleUnlock} />
       case 'signup':

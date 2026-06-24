@@ -1,4 +1,7 @@
 import { supabase } from './supabase'
+import { createFunnelPaywallPreview } from './previewImage'
+
+const FAKE_FUNNEL_LOADING_MS = 8000
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -177,4 +180,75 @@ export async function generateNailVisualization({
     mode,
     createdAt: new Date().toISOString(),
   }
+}
+
+/** Faux chargement funnel — aucun appel fal.ai, aperçu flouté depuis la photo originale. */
+export async function buildFakeFunnelPreview(genData) {
+  await new Promise((resolve) => setTimeout(resolve, FAKE_FUNNEL_LOADING_MS))
+
+  const { base64: originalImageData } = await imageToBase64(genData.photo, 720)
+  const previewSource = originalImageData || genData.photo
+  const previewImage = await createFunnelPaywallPreview(previewSource)
+  const mode = genData.mode || (genData.inspirationPhoto ? 'inspiration' : 'onboarding')
+
+  return {
+    pendingGeneration: true,
+    originalImage: genData.photo,
+    originalImageData,
+    previewImage,
+    shape: genData.shape,
+    style: genData.style,
+    length: genData.length,
+    mode,
+    createdAt: new Date().toISOString(),
+  }
+}
+
+/** Sérialise le funnel pour génération réelle après paiement (base64, survit à Stripe). */
+export async function serializeFunnelGenPayload(genData) {
+  const { base64: photoDataUrl, aspectRatio } = await imageToBase64(genData.photo, 2048)
+
+  let inspirationDataUrl = null
+  if (genData.inspirationPhoto) {
+    inspirationDataUrl = (await imageToBase64(genData.inspirationPhoto, 2048)).base64
+  }
+
+  let outfitDataUrl = null
+  if (genData.outfitPhoto) {
+    outfitDataUrl = (await imageToBase64(genData.outfitPhoto, 2048)).base64
+  }
+
+  const mode = genData.mode || (genData.inspirationPhoto ? 'inspiration' : 'onboarding')
+
+  return {
+    photoDataUrl,
+    aspectRatio,
+    inspirationDataUrl,
+    outfitDataUrl,
+    mode,
+    shape: genData.shape,
+    style: genData.style,
+    length: genData.length,
+    customNote: genData.customNote,
+    occasion: genData.occasion,
+    occasionLabel: genData.occasionLabel,
+  }
+}
+
+/** Génération réelle fal.ai à partir des données funnel persistées. */
+export async function generateFromFunnelPayload(stored, visualizationId = null) {
+  if (!stored?.photoDataUrl) throw new Error('Données du funnel introuvables. Recommence depuis le début.')
+
+  return generateNailVisualization({
+    photo: stored.photoDataUrl,
+    mode: stored.mode || 'onboarding',
+    shape: stored.shape,
+    style: stored.style,
+    length: stored.length,
+    customNote: stored.customNote,
+    inspirationPhoto: stored.inspirationDataUrl,
+    outfitPhoto: stored.outfitDataUrl,
+    occasion: stored.occasion,
+    occasionLabel: stored.occasionLabel,
+  }, visualizationId)
 }

@@ -4,6 +4,7 @@ import { supabase } from './supabase'
 const SELECTED_PLAN_KEY = 'selected_plan'
 const RESULT_KEY = 'funnel_pending_result'
 const STEP_KEY = 'funnel_step'
+const GEN_DATA_KEY = 'funnel_pending_gen'
 
 export function setSelectedPlan(planId) {
   const value = planId === 'sub_exclusif_ia' ? 'exclusif_ia' : 'premium'
@@ -57,10 +58,29 @@ export function clearFunnelStep() {
   sessionStorage.removeItem(STEP_KEY)
 }
 
+export function persistFunnelGenData(data) {
+  if (!data) return
+  localStorage.setItem(GEN_DATA_KEY, JSON.stringify(data))
+}
+
+export function getFunnelGenData() {
+  try {
+    const raw = localStorage.getItem(GEN_DATA_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+export function clearFunnelGenData() {
+  localStorage.removeItem(GEN_DATA_KEY)
+}
+
 export function clearFunnelSession() {
   clearSelectedPlan()
   clearFunnelResult()
   clearFunnelStep()
+  clearFunnelGenData()
 }
 
 export function getPlanLabel(plan) {
