@@ -21,7 +21,7 @@ export default function Navbar() {
     { to: ROUTES.dashboardProfile, icon: User, label: t('appNav.profile') },
   ]
 
-  const creditsDisplay = isSubscribed ? '∞' : credits
+  const creditsDisplay = isSubscribed ? '∞' : '0'
   const creditsLink = isSubscribed ? ROUTES.dashboardProfile : ROUTES.dashboardPurchase
 
   return (

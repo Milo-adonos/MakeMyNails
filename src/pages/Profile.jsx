@@ -12,7 +12,7 @@ import { ROUTES } from '../lib/routes'
 
 export default function Profile() {
   const { t, i18n } = useTranslation()
-  const { credits, purchases, subscription, isSubscribed } = useCredits()
+  const { purchases, subscription, isSubscribed } = useCredits()
   const { user, profile, logout, login, signup, isAuthenticated } = useAuth()
   const navigate = useNavigate()
 
@@ -25,7 +25,7 @@ export default function Profile() {
   const [portalLoading, setPortalLoading] = useState(false)
 
   const planLabel = subscription?.plan === 'exclusif_ia' ? 'Exclusif IA' : 'Premium'
-  const looksDisplay = isSubscribed ? '∞' : credits
+  const looksDisplay = isSubscribed ? '∞' : '0'
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -156,21 +156,42 @@ export default function Profile() {
               <div>
                 <p className="font-medium text-brown">{t('profilePage.yourLooks')}</p>
                 <p className="text-sm text-brown-light/60">
-                  <span className="font-semibold text-brown">{looksDisplay}</span>
-                  {' '}
-                  {isSubscribed
-                    ? t('profilePage.unlimitedLooks')
-                    : (credits !== 1 ? t('profilePage.looksToCreatePlural') : t('profilePage.looksToCreate'))}
+                  {isSubscribed ? (
+                    <>
+                      <span className="font-semibold text-brown">{looksDisplay}</span>
+                      {' '}
+                      {t('profilePage.unlimitedLooks')}
+                    </>
+                  ) : (
+                    t('profilePage.subscriptionRequired')
+                  )}
                 </p>
               </div>
             </div>
             {!isSubscribed && (
               <Link to={ROUTES.dashboardPurchase} className="text-sm text-beige-dark font-medium hover:text-brown transition-colors">
-                {t('profilePage.getMore')}
+                {t('profilePage.subscribe')}
               </Link>
             )}
           </div>
         </motion.div>
+
+        {isAuthenticated && !isSubscribed && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12 }}
+            className="bg-white rounded-3xl p-6 shadow-sm shadow-brown/5 text-center"
+          >
+            <p className="text-sm text-brown-light/70 mb-4">{t('profilePage.resubscribeHint')}</p>
+            <Link
+              to={ROUTES.dashboardPurchase}
+              className="inline-flex items-center gap-2 bg-brown text-offwhite px-6 py-3 rounded-2xl font-medium text-sm hover:bg-brown-light transition-colors"
+            >
+              {t('profilePage.subscribe')}
+            </Link>
+          </motion.div>
+        )}
 
         {isAuthenticated && isSubscribed && subscription && (
           <motion.div

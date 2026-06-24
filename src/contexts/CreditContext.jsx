@@ -84,23 +84,12 @@ export function CreditProvider({ children }) {
 
   useEffect(() => subscribePostPaymentGeneration(setPendingGeneration), [])
 
-  const canGenerate = useCallback(() => {
-    if (isSubscribed) return true
-    return credits > 0
-  }, [isSubscribed, credits])
+  const canGenerate = useCallback(() => isSubscribed, [isSubscribed])
 
   const useCredit = useCallback(async () => {
-    if (isSubscribed) return true
-
-    if (user) {
-      if (credits <= 0) return false
-      await refreshProfile()
-      return credits > 0
-    }
-    if (localCredits <= 0) return false
-    setLocalCredits((c) => c - 1)
+    if (!isSubscribed) return false
     return true
-  }, [user, credits, localCredits, refreshProfile, isSubscribed])
+  }, [isSubscribed])
 
   const addCredits = useCallback(async (packId) => {
     if (!user) return

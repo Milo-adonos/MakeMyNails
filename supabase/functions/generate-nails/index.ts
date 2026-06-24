@@ -5,19 +5,27 @@ const FAL_MODEL = 'openai/gpt-image-2/edit'
 const FAL_QUEUE = `https://queue.fal.run/${FAL_MODEL}`
 const FAL_RUN = `https://fal.run/${FAL_MODEL}`
 
-/** Map client aspect labels to GPT Image 2 edit `image_size` values */
-function mapAspectRatioToImageSize(aspectRatio: string): string {
-  const map: Record<string, string> = {
-    '1:1': 'square',
-    '2:3': 'portrait_4_3',
-    '3:2': 'landscape_4_3',
-    '3:4': 'portrait_4_3',
-    '4:3': 'landscape_4_3',
-    '9:16': 'portrait_16_9',
-    '16:9': 'landscape_16_9',
-    auto: 'auto',
+/** GPT Image 2 edit — sortie 2K (plus grand côté = 2048px, multiples de 16). */
+function mapAspectRatioToImageSize(aspectRatio: string): { width: number; height: number } {
+  switch (aspectRatio) {
+    case '1:1':
+      return { width: 2048, height: 2048 }
+    case '3:4':
+      return { width: 1536, height: 2048 }
+    case '2:3':
+      return { width: 1360, height: 2048 }
+    case '4:3':
+      return { width: 2048, height: 1536 }
+    case '3:2':
+      return { width: 2048, height: 1360 }
+    case '9:16':
+      return { width: 1152, height: 2048 }
+    case '16:9':
+      return { width: 2048, height: 1152 }
+    case 'auto':
+    default:
+      return { width: 1536, height: 2048 }
   }
-  return map[aspectRatio] || 'auto'
 }
 
 const corsHeaders = {
@@ -144,10 +152,12 @@ function buildFormat(
   style?: string,
   length?: string,
 ): string {
+  const size = mapAspectRatioToImageSize(aspectRatio)
+  const sizeLabel = `2K ${size.width}x${size.height}`
   if (mode === 'onboarding' && shape && style && length) {
-    return `${mode} · ${shape}/${style}/${length} · ${aspectRatio}`
+    return `${mode} · ${shape}/${style}/${length} · ${sizeLabel}`
   }
-  return `${mode} · ${aspectRatio}`
+  return `${mode} · ${sizeLabel}`
 }
 
 function toDataUri(base64: string): string {

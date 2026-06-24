@@ -256,11 +256,10 @@ serve(async (req) => {
         || subscription.cancellation_details?.comment
         || null
 
-      await supabase
-        .from('subscriptions')
-        .update({ status: 'canceled' })
-        .eq('user_id', userId)
-        .eq('stripe_subscription_id', subscription.id)
+      await supabase.rpc('cancel_subscription_for_user', {
+        p_user_id: userId,
+        p_stripe_subscription_id: subscription.id,
+      })
       await supabase.from('subscription_cancellations').insert({
         user_id: userId,
         user_email: userEmail,

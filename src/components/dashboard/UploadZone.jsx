@@ -6,10 +6,10 @@ import { useCredits } from '../../contexts/CreditContext'
 import { ROUTES } from '../../lib/routes'
 
 export default function UploadZone({ onStart }) {
-  const { canGenerate } = useCredits()
+  const { canGenerate, isSubscribed } = useCredits()
   const { t } = useTranslation()
 
-  const hasCredits = canGenerate()
+  const canCreate = canGenerate()
 
   return (
     <motion.div
@@ -21,7 +21,7 @@ export default function UploadZone({ onStart }) {
       </h1>
 
       <div className="bg-white rounded-3xl shadow-sm shadow-brown/5 overflow-hidden">
-        {hasCredits ? (
+        {canCreate ? (
           <button onClick={onStart} className="w-full flex flex-col items-center gap-4 p-8 group">
             <div className="w-16 h-16 bg-gradient-to-br from-nude to-beige rounded-2xl flex items-center justify-center shadow-sm shadow-nude-dark/20 group-hover:scale-105 transition-transform">
               <Plus className="w-8 h-8 text-brown" />
@@ -38,12 +38,14 @@ export default function UploadZone({ onStart }) {
             <div className="w-12 h-12 bg-nude/30 rounded-2xl flex items-center justify-center mx-auto mb-3">
               <AlertCircle className="w-6 h-6 text-brown-light/50" />
             </div>
-            <p className="text-sm font-medium text-brown mb-1">{t('dashboard.noCredits')}</p>
+            <p className="text-sm font-medium text-brown mb-1">
+              {isSubscribed ? t('dashboard.noCredits') : t('dashboard.noSubscription')}
+            </p>
             <Link
               to={ROUTES.dashboardPurchase}
               className="inline-flex items-center gap-2 bg-brown text-offwhite px-6 py-3 rounded-2xl font-medium text-sm hover:bg-brown-light transition-colors mt-4"
             >
-              {t('dashboard.buyCredits')}
+              {t('dashboard.subscribeCta')}
             </Link>
           </div>
         )}

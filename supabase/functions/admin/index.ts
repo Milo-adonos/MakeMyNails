@@ -340,7 +340,10 @@ serve(async (req) => {
       const { data: profile } = await supabase.from('profiles').select('email').eq('id', body.userId).maybeSingle()
 
       await stripe.subscriptions.cancel(sub.stripe_subscription_id)
-      await supabase.from('subscriptions').update({ status: 'canceled' }).eq('id', sub.id)
+      await supabase.rpc('cancel_subscription_for_user', {
+        p_user_id: body.userId,
+        p_stripe_subscription_id: sub.stripe_subscription_id,
+      })
       await supabase.from('subscription_cancellations').insert({
         user_id: body.userId,
         user_email: profile?.email ?? null,
