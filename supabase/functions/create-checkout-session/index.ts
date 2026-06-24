@@ -56,7 +56,7 @@ serve(async (req) => {
       apiVersion: '2024-04-10',
     })
 
-    const appUrl = Deno.env.get('APP_URL') ?? 'https://makemynails.app'
+    const appUrl = Deno.env.get('APP_URL') ?? 'https://www.makemynails.app'
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',

@@ -110,12 +110,23 @@ export async function waitForActiveSubscription(userId, maxAttempts = 20) {
   return null
 }
 
+export async function waitForAuthSession(maxAttempts = 24, intervalMs = 250) {
+  for (let i = 0; i < maxAttempts; i++) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.access_token) return session
+    await new Promise((r) => setTimeout(r, intervalMs))
+  }
+  return null
+}
+
 export async function startStripeCheckoutFromSelectedPlan() {
   const stripePlanId = getSelectedPlanStripeId()
   if (!stripePlanId) throw new Error('Aucun plan sélectionné')
 
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.access_token) throw new Error('Non authentifiée')
+  const session = await waitForAuthSession()
+  if (!session?.access_token) {
+    throw new Error('Connecte-toi pour continuer vers le paiement.')
+  }
 
   const url = await createCheckoutSession(stripePlanId, session.access_token)
   openStripeCheckout(url, { planId: stripePlanId, placement: 'funnel' })

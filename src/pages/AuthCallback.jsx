@@ -1,7 +1,11 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { getSelectedPlan, persistFunnelStep } from '../lib/funnelSession'
+import {
+  getSelectedPlan,
+  persistFunnelStep,
+  waitForAuthSession,
+} from '../lib/funnelSession'
 import { ROUTES } from '../lib/routes'
 
 export default function AuthCallback() {
@@ -16,6 +20,12 @@ export default function AuthCallback() {
     handled.current = true
 
     const run = async () => {
+      const session = await waitForAuthSession()
+      if (!session?.access_token) {
+        navigate(ROUTES.login, { replace: true })
+        return
+      }
+
       const selectedPlan = getSelectedPlan()
 
       if (selectedPlan) {

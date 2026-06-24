@@ -50,9 +50,16 @@ export default function FunnelSignup({ onCheckout }) {
         setError('Les inscriptions sont temporairement suspendues.')
         return
       }
-      await signup(email, password, '')
+      const data = await signup(email, password, '')
       trackEvent('signup', { placement: 'funnel', label: 'email' })
-      goToCheckout()
+
+      if (data?.session?.access_token) {
+        if (onCheckout) onCheckout()
+        else navigate(ROUTES.stripeCheckout, { replace: true })
+        return
+      }
+
+      await goToCheckout()
     } catch (err) {
       setError(err.message || 'Une erreur est survenue.')
     } finally {
