@@ -55,38 +55,86 @@ const OCCASION_LABELS: Record<string, string> = {
   other: 'a special occasion',
 }
 
-const PROMPT_INSPIRATION =
-  'Keep absolutely everything from image 1 unchanged — skin tone, hand shape, fingers, rings, background, lighting, shadows. Only replace the nails with the nail art design from image 2. Do not alter any other detail. Preserve the exact same framing, angle, and quality as image 1.'
-
-function buildOnboardingPrompt(shape: string, style: string): string {
-  const shapeLabel = SHAPE_LABELS[shape.toLowerCase()] || shape
-  const styleLabel = STYLE_LABELS[style.toLowerCase()] || style
-  return `Keep absolutely everything from image 1 unchanged — skin tone, hand shape, fingers, rings, background, lighting, shadows. Only replace the nails with ${shapeLabel} shaped nails in ${styleLabel} style. Do not alter any other detail. Preserve the exact same framing, angle, and quality as image 1.`
+const LENGTH_LABELS: Record<string, string> = {
+  short: 'short',
+  medium: 'medium',
+  long: 'long',
 }
 
-function buildEmmaPrompt(occasion?: string, occasionLabel?: string, hasOutfit?: boolean): string {
-  const label = occasionLabel?.trim()
+const PROMPT_INTRO =
+  'I am provided with a base image (Image 1) showing a real hand with natural nails. Apply nail art to this hand following one of these three cases:'
+
+const CASE_1_INSPIRATION = `CASE 1 — INSPIRATION IMAGE: A second image (Image 2) is provided as nail art reference. Reproduce the exact nail design from Image 2 onto Image 1 with pixel-perfect accuracy: exact colors, exact patterns, exact decorations (flowers, gems, pearls, stars, glitter, french tips), exact finish (glossy, matte, chrome, gradient), exact nail length and shape from Image 2. Analyze each nail individually before generating.`
+
+const PROMPT_RULES = `ABSOLUTE RULES FOR ALL 3 CASES:
+
+— Only modify the nails. Zero other changes.
+
+— Keep 100% identical: skin tone, skin texture, veins, wrinkles, knuckles, hand shape, fingers, background, lighting, shadows, angle, framing, photo grain, bracelets, rings, jewelry.
+
+— The nail design must be applied with maximum photorealism — same lighting conditions as Image 1, natural nail gloss, realistic depth and texture.
+
+— Final result must be completely indistinguishable from a real unedited iPhone photo.
+
+— No AI artifacts, no skin smoothing, no background changes.
+
+— Ultra realistic, 2K quality, same format as Image 1.`
+
+function buildCase2Prompt(
+  shape: string,
+  style: string,
+  length: string,
+  customNote?: string,
+): string {
+  const shapeLabel = SHAPE_LABELS[shape.toLowerCase()] || shape
+  const styleLabel = STYLE_LABELS[style.toLowerCase()] || style
+  const lengthLabel = LENGTH_LABELS[length.toLowerCase()] || length
+  const details = customNote?.trim() || 'none specified'
+  const color = customNote?.trim()
+    ? `as described in Details (${customNote.trim()})`
+    : `harmonious with the ${styleLabel} style`
+
+  return `CASE 2 — CUSTOM DESIGN: No reference image. Apply nail art based on these specifications: Shape: ${shapeLabel}, Length: ${lengthLabel}, Style: ${styleLabel}, Color: ${color}, Details: ${details}. Create a photorealistic nail design matching these exact specifications.`
+}
+
+function buildCase3Prompt(
+  occasion?: string,
+  occasionLabel?: string,
+  hasOutfit?: boolean,
+): string {
+  const occasionText = occasionLabel?.trim()
     || (occasion ? OCCASION_LABELS[occasion.toLowerCase()] : null)
     || 'the chosen occasion'
-  let prompt = `Keep absolutely everything from image 1 unchanged. Only replace the nails with a design perfectly suited for ${label}, adapted to the skin tone visible in the image.`
-  if (hasOutfit) {
-    prompt += ' Use image 2 as outfit inspiration — coordinate the nail colors and style with the outfit while keeping the hand from image 1 unchanged.'
-  }
-  return `${prompt} Do not alter any other detail.`
+  const outfitDescription = hasOutfit
+    ? 'the outfit shown in Image 2'
+    : 'an outfit appropriate for the occasion'
+
+  return `CASE 3 — EMMA AI: No reference image. The user is wearing ${outfitDescription} for ${occasionText}. Select the most complementary and elegant nail design for this outfit and occasion. Consider the colors, style and formality of the outfit.`
 }
 
 function buildPrompt(
   mode: GenerationMode,
   shape?: string,
   style?: string,
+  length?: string,
+  customNote?: string,
   occasion?: string,
   occasionLabel?: string,
   hasOutfit?: boolean,
 ): string {
-  if (mode === 'inspiration') return PROMPT_INSPIRATION
-  if (mode === 'emma') return buildEmmaPrompt(occasion, occasionLabel, hasOutfit)
-  if (!shape || !style) throw new Error('shape and style are required for onboarding mode')
-  return buildOnboardingPrompt(shape, style)
+  let activeCase: string
+  if (mode === 'inspiration') {
+    activeCase = CASE_1_INSPIRATION
+  } else if (mode === 'emma') {
+    activeCase = buildCase3Prompt(occasion, occasionLabel, hasOutfit)
+  } else {
+    if (!shape || !style || !length) {
+      throw new Error('shape, style and length are required for onboarding mode')
+    }
+    activeCase = buildCase2Prompt(shape, style, length, customNote)
+  }
+
+  return `${PROMPT_INTRO}\n${activeCase}\n${PROMPT_RULES}`
 }
 
 function buildFormat(
@@ -308,10 +356,16 @@ serve(async (req) => {
       imageUrls.push(toDataUri(outfitBase64))
     }
 
-    let prompt = buildPrompt(mode, shape, style, occasion, occasionLabel, !!outfitBase64)
-    if (customNote?.trim()) {
-      prompt += ` Additional user note: ${customNote.trim()}`
-    }
+    let prompt = buildPrompt(
+      mode,
+      shape,
+      style,
+      length,
+      customNote,
+      occasion,
+      occasionLabel,
+      !!outfitBase64,
+    )
 
     const resultImageUrl = await generateWithFal(falKey, imageUrls, prompt, aspectRatio)
 
