@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCredits } from '../../contexts/CreditContext'
 import { setSelectedPlan } from '../../lib/funnelSession'
@@ -9,6 +10,7 @@ import { ROUTES } from '../../lib/routes'
 import { trackEvent, planKey } from '../../lib/radar'
 
 export default function FunnelPricing({ onGoSignup }) {
+  const { t, i18n } = useTranslation()
   const [designCount, setDesignCount] = useState(1247)
   const [loading, setLoading] = useState(null)
   const navigate = useNavigate()
@@ -40,10 +42,12 @@ export default function FunnelPricing({ onGoSignup }) {
       await addCredits(planId)
     } catch (err) {
       console.error(err)
-      alert('Erreur: ' + (err?.message || 'Paiement impossible'))
+      alert(t('funnel.pricing.paymentError', { message: err?.message || t('funnel.checkout.paymentFailed') }))
       setLoading(null)
     }
   }
+
+  const numberLocale = i18n.language === 'en' ? 'en-US' : 'fr-FR'
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-offwhite to-nude-light/30 px-4 py-12">
@@ -54,10 +58,10 @@ export default function FunnelPricing({ onGoSignup }) {
           className="text-center mb-10"
         >
           <h1 className="font-heading text-3xl md:text-4xl font-bold text-brown mb-2">
-            Débloque tes ongles parfaits
+            {t('funnel.pricing.title')}
           </h1>
           <p className="text-brown-light/60 text-sm">
-            Annulable à tout moment, sans engagement
+            {t('funnel.pricing.subtitle')}
           </p>
         </motion.div>
 
@@ -65,7 +69,7 @@ export default function FunnelPricing({ onGoSignup }) {
           variant="funnel"
           loading={loading}
           onSelect={handleSelect}
-          ctaLabel="Choisir ce plan →"
+          ctaLabel={t('funnel.pricing.cta')}
         />
 
         <motion.div
@@ -79,8 +83,8 @@ export default function FunnelPricing({ onGoSignup }) {
             <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
           </span>
           <p className="text-xs text-brown-light/60">
-            <span className="font-semibold text-brown">{designCount.toLocaleString('fr-FR')}</span>
-            {' '}designs créés aujourd&apos;hui
+            <span className="font-semibold text-brown">{designCount.toLocaleString(numberLocale)}</span>
+            {' '}{t('funnel.pricing.designsToday')}
           </p>
         </motion.div>
       </div>

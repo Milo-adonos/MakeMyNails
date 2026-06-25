@@ -1,9 +1,11 @@
 import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Upload, Image, ArrowRight } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import Button from '../common/Button'
 
 export default function InspirationCapture({ onNext, onBack, onInspirationSelect, onSkip }) {
+  const { t } = useTranslation()
   const fileInputRef = useRef(null)
   const [preview, setPreview] = useState(null)
 
@@ -25,10 +27,10 @@ export default function InspirationCapture({ onNext, onBack, onInspirationSelect
           className="text-center mb-8"
         >
           <h2 className="font-heading text-3xl font-bold text-brown mb-3">
-            Tu as une inspi d&apos;ongles ?
+            {t('flow.inspirationTitle')}
           </h2>
           <p className="text-brown-light/70">
-            Montre-nous ce que tu veux, on l&apos;adapte à ta main
+            {t('flow.inspirationSubtitle')}
           </p>
         </motion.div>
 
@@ -56,21 +58,21 @@ export default function InspirationCapture({ onNext, onBack, onInspirationSelect
             className="w-full bg-brown text-offwhite py-4 rounded-2xl font-semibold flex items-center justify-center gap-2.5 hover:bg-brown-light transition-colors"
           >
             <Upload className="w-5 h-5" />
-            Ajouter une photo d&apos;inspi
+            {t('flow.inspirationAdd')}
           </button>
 
           <button
             onClick={onSkip}
             className="w-full flex items-center justify-center gap-2 bg-nude text-brown py-4 rounded-2xl font-semibold text-base border-2 border-brown/20 hover:bg-nude-dark hover:border-brown/40 transition-colors"
           >
-            Continuer sans inspi
+            {t('flow.inspirationSkip')}
             <ArrowRight className="w-5 h-5" />
           </button>
         </div>
 
         <div className="mt-6 w-full">
           <Button variant="ghost" onClick={onBack} className="w-full">
-            Retour
+            {t('flow.back')}
           </Button>
         </div>
       </div>

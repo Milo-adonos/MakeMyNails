@@ -6,31 +6,13 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 export const SUBSCRIPTIONS = [
   {
     id: 'sub_premium',
-    name: 'Premium',
     price: 9.99,
-    period: 'mois',
     popular: false,
-    features: [
-      'Générations illimitées',
-      'Sauvegarde de tes designs',
-      'Upload de tes inspis',
-      'Catalogue complet',
-      'Support prioritaire',
-    ],
   },
   {
     id: 'sub_exclusif_ia',
-    name: 'Exclusif IA',
     price: 14.99,
-    period: 'mois',
     popular: true,
-    features: [
-      'Tout le plan Premium',
-      'Emma — assistante IA personnelle',
-      'Recommandations par occasion',
-      'Accord tenue & ongles',
-      'Accès prioritaire aux nouveautés',
-    ],
   },
 ]
 

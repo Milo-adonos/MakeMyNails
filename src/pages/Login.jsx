@@ -54,7 +54,7 @@ export default function Login() {
         await redirectAfterAuth()
       } else {
         if (await isMaintenanceMode()) {
-          setError('Les inscriptions sont temporairement suspendues.')
+          setError(t('funnel.signup.maintenance'))
           return
         }
         await signup(email, password, name)

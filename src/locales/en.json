@@ -262,6 +262,7 @@
     "recommendations": "Tell me the occasion and your outfit — I'll take care of the rest ✨",
     "recommendationsSub": "Let Emma choose for you ✨",
     "recommendationsLocked": "Emma is ready to find your perfect manicure 💅 Unlock her with Exclusif IA",
+    "looksCreated": "+2k looks created ✨",
     "credits": "credit",
     "credits_plural": "credits",
     "premium": "Premium",
@@ -279,7 +280,8 @@
     "resultsIntro": "Perfect! Here are my recommendations for {{occasion}}{{outfitSuffix}} ✨",
     "resultsSuffix_outfit": ", matched to your outfit",
     "generateCta": "Generate my nails for {{occasion}} ✨",
-    "restart": "Start over"
+    "restart": "Start over",
+    "online": "Online"
     }
   },
   "purchase": {
@@ -294,7 +296,106 @@
   },
   "footer": {
     "tagline": "Never leave the salon with regrets again.",
-    "rights": "© 2025 MakeMyNails. All rights reserved."
+    "rights": "© 2025 MakeMyNails. All rights reserved.",
+    "product": "Product",
+    "legal": "Legal",
+    "pricing": "Pricing",
+    "howItWorks": "How it works",
+    "testimonials": "Testimonials",
+    "legalNotice": "Legal notice",
+    "terms": "Terms of sale",
+    "privacy": "Privacy policy",
+    "cookies": "Cookies"
+  },
+  "subscriptions": {
+    "premium": {
+      "name": "Premium",
+      "period": "month",
+      "features": [
+        "Unlimited generations",
+        "Save your designs",
+        "Upload your inspo photos",
+        "Full catalog",
+        "Priority support"
+      ]
+    },
+    "exclusif_ia": {
+      "name": "Exclusif IA",
+      "period": "month",
+      "features": [
+        "Everything in Premium",
+        "Emma — personal AI assistant",
+        "Recommendations by occasion",
+        "Outfit & nails matching",
+        "Early access to new features"
+      ]
+    }
+  },
+  "funnel": {
+    "pricing": {
+      "title": "Unlock your perfect nails",
+      "subtitle": "Cancel anytime, no commitment",
+      "cta": "Choose this plan →",
+      "designsToday": "designs created today",
+      "paymentError": "Error: {{message}}"
+    },
+    "signup": {
+      "title": "Create your account to unlock",
+      "planSelected": "Selected plan: {{plan}}",
+      "choosePlanFirst": "Choose your subscription first",
+      "planPremium": "Premium — €9.99/month",
+      "planExclusif": "Exclusif IA — €14.99/month",
+      "confirmEmail": "Confirm your email or log in again to continue to payment.",
+      "maintenance": "Signups are temporarily suspended.",
+      "creating": "Creating…",
+      "continuePayment": "Continue to payment →",
+      "alreadyAccount": "Already have an account? Log in"
+    },
+    "checkout": {
+      "unavailable": "Payment unavailable",
+      "backToPricing": "Back to pricing",
+      "noPlanSelected": "No plan selected",
+      "loginRequired": "Log in to continue to payment.",
+      "paymentFailed": "Payment failed",
+      "messages": [
+        "Preparing payment…",
+        "Redirecting to Stripe…",
+        "Almost ready…"
+      ]
+    },
+    "processing": {
+      "messages": [
+        "Analyzing your hand…",
+        "Creating your design…",
+        "Almost ready…"
+      ],
+      "messagesFull": [
+        "Analyzing your hand…",
+        "Creating your design…",
+        "Finalizing with AI…"
+      ],
+      "hintFake": "Preparing your preview — 8 seconds",
+      "hintReal": "Generating — about 15 to 30 seconds",
+      "didYouKnow": "Did you know? 💅",
+      "facts": [
+        "Women change nail designs on average every 3 weeks 💅",
+        "Nail art has existed for over 5,000 years — Egyptian women used henna 🌿",
+        "Your nail color can reveal your personality ✨",
+        "Nude is the most requested nail color in salons 🤍",
+        "Nails grow faster in summer than in winter ☀️",
+        "Emma has already helped thousands of women find their perfect nails 🤖",
+        "Sending your design to your nail artist reduces mistakes by 90% 📲"
+      ],
+      "emmaMessages": [
+        "Emma is analyzing your occasion…",
+        "Creating your custom design…",
+        "Almost ready…"
+      ]
+    },
+    "error": {
+      "title": "Oops, something went wrong.",
+      "retry": "Try again"
+    }
   },
   "appNav": {
     "home": "Home",
@@ -404,7 +505,16 @@
     "title": "Payment confirmed 💅",
     "subtitle": "Your subscription is active. You can now try any style you want.",
     "cta": "Create my first manicure →",
-    "redirect": "Redirecting in {{count}}s…"
+    "redirect": "Redirecting in {{count}}s…",
+    "invalidSession": "Invalid payment session.",
+    "backToSubscriptions": "Back to subscriptions",
+    "activating": "Payment received — activating your account. Refresh in a few seconds.",
+    "goToDashboard": "Go to dashboard",
+    "generationFailed": "Payment confirmed, but generation failed. Try again from the dashboard.",
+    "viewHistory": "View my history",
+    "generatingTitle": "Creating your design…",
+    "generatingMessage": "Your perfect design is being created ✨ Generation takes about 2 minutes — stay here, you're going to love the result 💅",
+    "activatingSubscription": "Activating your subscription…"
   },
   "historyPage": {
     "title": "History"
@@ -445,6 +555,52 @@
     "continue": "Continue",
     "close": "Close",
     "loading": "Loading…",
-    "error": "An error occurred"
+    "error": "An error occurred",
+    "retry": "Try again",
+    "generationFailed": "Generation failed.",
+    "notLoggedIn": "Not logged in",
+    "noPhoto": "No photo provided. Please start over from the beginning.",
+    "funnelDataMissing": "Funnel data not found. Start over from the beginning.",
+    "downloadFailed": "Could not download the image"
+  },
+  "errors": {
+    "generationFailed": "Generation failed."
+  },
+  "emmaRecommendations": {
+    "wedding": [
+      { "name": "French Élégance", "desc": "Classic and refined, perfect for the big day" },
+      { "name": "Pearl Nude", "desc": "Soft and luminous with a pearlescent touch" },
+      { "name": "Rose Glamour", "desc": "Pink gradient for a romantic effect" }
+    ],
+    "work": [
+      { "name": "Subtle Nude", "desc": "Clean and professional, goes with everything" },
+      { "name": "Short French", "desc": "Classic and office-appropriate" },
+      { "name": "Soft Rose", "desc": "A soft, elegant touch of color" }
+    ],
+    "party": [
+      { "name": "Chrome Party", "desc": "Mirror effect to shine all night long" },
+      { "name": "Festive Nail Art", "desc": "Creative and bold — you'll stand out" },
+      { "name": "Sunset Gradient", "desc": "Warm, vibrant colors" }
+    ],
+    "vacation": [
+      { "name": "Summer Coral", "desc": "Bright, joyful color for the beach" },
+      { "name": "Soft Pastel", "desc": "Relaxing, fresh pastel tones" },
+      { "name": "Minimal Chic", "desc": "Simple and practical for travel" }
+    ],
+    "date": [
+      { "name": "Passion Red", "desc": "Classic seductive red, timeless" },
+      { "name": "Romantic French", "desc": "Soft elegance to charm" },
+      { "name": "Rose Gradient", "desc": "Romantic and feminine" }
+    ],
+    "everyday": [
+      { "name": "Natural Nude", "desc": "Natural and polished for everyday" },
+      { "name": "Soft French", "desc": "Light classic for daily wear" },
+      { "name": "Soft Color", "desc": "A subtle touch of color" }
+    ],
+    "other": [
+      { "name": "Chic Almond", "desc": "Versatile and elegant" },
+      { "name": "Creative Nail Art", "desc": "Original and unique to you" },
+      { "name": "Modern Chrome", "desc": "Futuristic and trendy" }
+    ]
   }
 }

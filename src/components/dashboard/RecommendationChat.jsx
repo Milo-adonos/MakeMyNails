@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Camera, Upload, Sparkles, ChevronRight, Shirt, Wand2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -17,40 +17,52 @@ const occasionIcons = {
 
 const recommendations = {
   wedding: [
-    { name: 'French Élégance', shape: 'almond', style: 'french', length: 'medium', desc: 'Classique et raffiné, parfait pour le grand jour' },
-    { name: 'Nude Perlé', shape: 'oval', style: 'minimalist', length: 'medium', desc: 'Doux et lumineux avec une touche nacrée' },
-    { name: 'Glamour Rosé', shape: 'ballerina', style: 'gradient', length: 'long', desc: 'Dégradé rose pour un effet romantique' },
+    { shape: 'almond', style: 'french', length: 'medium' },
+    { shape: 'oval', style: 'minimalist', length: 'medium' },
+    { shape: 'ballerina', style: 'gradient', length: 'long' },
   ],
   work: [
-    { name: 'Nude Discret', shape: 'square', style: 'minimalist', length: 'short', desc: 'Propre et professionnel, passe partout' },
-    { name: 'French Courte', shape: 'oval', style: 'french', length: 'short', desc: 'Classique et adapté au bureau' },
-    { name: 'Rosé Subtil', shape: 'almond', style: 'color', length: 'short', desc: 'Touche de couleur douce et élégante' },
+    { shape: 'square', style: 'minimalist', length: 'short' },
+    { shape: 'oval', style: 'french', length: 'short' },
+    { shape: 'almond', style: 'color', length: 'short' },
   ],
   party: [
-    { name: 'Chrome Party', shape: 'coffin', style: 'chrome', length: 'long', desc: 'Effet miroir pour briller toute la soirée' },
-    { name: 'Nail Art Festif', shape: 'stiletto', style: 'nailart', length: 'long', desc: 'Créatif et audacieux, tu seras remarquée' },
-    { name: 'Dégradé Sunset', shape: 'almond', style: 'gradient', length: 'medium', desc: 'Couleurs chaudes et vibrantes' },
+    { shape: 'coffin', style: 'chrome', length: 'long' },
+    { shape: 'stiletto', style: 'nailart', length: 'long' },
+    { shape: 'almond', style: 'gradient', length: 'medium' },
   ],
   vacation: [
-    { name: 'Corail Estival', shape: 'oval', style: 'color', length: 'medium', desc: 'Couleur vive et joyeuse pour la plage' },
-    { name: 'Pastel Doux', shape: 'almond', style: 'gradient', length: 'medium', desc: 'Tons pastel relaxants et frais' },
-    { name: 'Minimale Chic', shape: 'square', style: 'minimalist', length: 'short', desc: 'Simple et pratique pour voyager' },
+    { shape: 'oval', style: 'color', length: 'medium' },
+    { shape: 'almond', style: 'gradient', length: 'medium' },
+    { shape: 'square', style: 'minimalist', length: 'short' },
   ],
   date: [
-    { name: 'Rouge Passion', shape: 'almond', style: 'color', length: 'medium', desc: 'Classique séducteur, indémodable' },
-    { name: 'French Romantique', shape: 'ballerina', style: 'french', length: 'medium', desc: 'Élégance douce pour charmer' },
-    { name: 'Dégradé Rosé', shape: 'oval', style: 'gradient', length: 'medium', desc: 'Romantique et féminin' },
+    { shape: 'almond', style: 'color', length: 'medium' },
+    { shape: 'ballerina', style: 'french', length: 'medium' },
+    { shape: 'oval', style: 'gradient', length: 'medium' },
   ],
   everyday: [
-    { name: 'Nude Naturel', shape: 'oval', style: 'minimalist', length: 'short', desc: 'Naturel et soigné au quotidien' },
-    { name: 'French Soft', shape: 'square', style: 'french', length: 'short', desc: 'Classique léger pour tous les jours' },
-    { name: 'Couleur Douce', shape: 'almond', style: 'color', length: 'short', desc: 'Touche de couleur subtile' },
+    { shape: 'oval', style: 'minimalist', length: 'short' },
+    { shape: 'square', style: 'french', length: 'short' },
+    { shape: 'almond', style: 'color', length: 'short' },
   ],
   other: [
-    { name: 'Amande Chic', shape: 'almond', style: 'minimalist', length: 'medium', desc: 'Polyvalent et élégant' },
-    { name: 'Nail Art Créatif', shape: 'coffin', style: 'nailart', length: 'medium', desc: 'Original et unique à ton image' },
-    { name: 'Chrome Moderne', shape: 'stiletto', style: 'chrome', length: 'long', desc: 'Futuriste et tendance' },
+    { shape: 'almond', style: 'minimalist', length: 'medium' },
+    { shape: 'coffin', style: 'nailart', length: 'medium' },
+    { shape: 'stiletto', style: 'chrome', length: 'long' },
   ],
+}
+
+function buildRecos(occasionKey, translate) {
+  const meta = recommendations[occasionKey] || recommendations.other
+  const labels = translate(`emmaRecommendations.${occasionKey}`, { returnObjects: true })
+  if (!Array.isArray(labels)) return meta
+
+  return meta.map((item, index) => ({
+    ...item,
+    name: labels[index]?.name || '',
+    desc: labels[index]?.desc || '',
+  }))
 }
 
 function BotMessage({ text, delay = 0, children }) {
@@ -152,9 +164,14 @@ export default function RecommendationChat({ open, onClose, onSelect: externalOn
     setTimeout(() => setStep('occasion'), 300)
   }
 
+  const emmaProcessingMessages = useMemo(
+    () => t('funnel.processing.emmaMessages', { returnObjects: true }),
+    [t],
+  )
+
   const handleOccasion = (key) => {
     setOccasion(key)
-    setRecos(recommendations[key] || recommendations.other)
+    setRecos(buildRecos(key, t))
     setTimeout(() => setStep('results'), 600)
   }
 
@@ -240,12 +257,7 @@ export default function RecommendationChat({ open, onClose, onSelect: externalOn
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-[60] bg-offwhite"
       >
-        <Processing messages={[
-          'Emma analyse ton occasion...',
-          'Création de ton design sur mesure...',
-          'Presque prêt...',
-        ]}
-        />
+        <Processing messages={emmaProcessingMessages} />
       </motion.div>
     )
   }
@@ -275,7 +287,7 @@ export default function RecommendationChat({ open, onClose, onSelect: externalOn
             </div>
             <div>
               <p className="font-heading text-base font-semibold text-brown">Emma</p>
-              <p className="text-[10px] text-green-500 font-medium">Online</p>
+              <p className="text-[10px] text-green-500 font-medium">{t('dashboard.emmaChat.online')}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-nude/30 transition-colors">

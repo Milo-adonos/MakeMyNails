@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertCircle, RotateCcw } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import ManicureSelectionSteps from '../funnel/ManicureSelectionSteps'
 import { generateNailVisualization } from '../../lib/api'
 import { useCredits } from '../../contexts/CreditContext'
@@ -16,6 +17,7 @@ import {
 } from '../../lib/manicureFunnel'
 
 export default function NewVisualizationFlow({ open, onClose }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { canGenerate, createVisualization, completeVisualization, uploadBlobUrl } = useCredits()
   const processingRef = useRef(null)
@@ -73,7 +75,7 @@ export default function NewVisualizationFlow({ open, onClose }) {
       trackEvent('generation_complete', { mode: payload.mode, placement: 'dashboard' })
       return result
     })().catch((err) => {
-      setGenerationError(err.message || 'La génération a échoué.')
+      setGenerationError(err.message || t('common.generationFailed'))
       processingRef.current = null
       throw err
     })
@@ -137,7 +139,7 @@ export default function NewVisualizationFlow({ open, onClose }) {
           <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-5">
             <AlertCircle className="w-8 h-8 text-red-400" />
           </div>
-          <h2 className="font-heading text-2xl font-bold text-brown mb-3">Oups, une erreur est survenue.</h2>
+          <h2 className="font-heading text-2xl font-bold text-brown mb-3">{t('funnel.error.title')}</h2>
           <p className="text-red-400/70 text-xs mb-8 font-mono bg-red-50 rounded-xl px-3 py-2">{generationError}</p>
           <button
             onClick={() => {
@@ -148,7 +150,7 @@ export default function NewVisualizationFlow({ open, onClose }) {
             className="w-full bg-brown text-offwhite py-4 rounded-2xl font-semibold flex items-center justify-center gap-2 hover:bg-brown-light transition-colors"
           >
             <RotateCcw className="w-4 h-4" />
-            Réessayer
+            {t('funnel.error.retry')}
           </button>
         </motion.div>
       </motion.div>

@@ -1,7 +1,8 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertCircle, RotateCcw } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import Welcome from '../components/onboarding/Welcome'
 import ManicureSelectionSteps from '../components/funnel/ManicureSelectionSteps'
 import FunnelSignup from '../components/onboarding/FunnelSignup'
@@ -23,6 +24,7 @@ import {
 } from '../lib/manicureFunnel'
 
 export default function Onboarding() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const processingRef = useRef(null)
@@ -87,17 +89,15 @@ export default function Onboarding() {
 
     setGenerationError(null)
     processingRef.current = serializeFunnelGenPayload(genData)
-      .then((stored) => {
-        persistFunnelGenData(stored)
-      })
+      .then((stored) => persistFunnelGenData(stored))
       .catch((err) => {
-        setGenerationError(err.message || 'Une erreur est survenue.')
+        setGenerationError(err.message || t('common.error'))
         processingRef.current = null
         throw err
       })
 
     goTo('processing')
-  }, [goTo])
+  }, [goTo, t])
 
   const handleProcessingComplete = useCallback(async () => {
     try {
@@ -159,6 +159,11 @@ export default function Onboarding() {
   const showProgress = MANICURE_SELECTION_STEPS.includes(step)
   const progressPercent = getManicureProgressPercent(step, skipStyleSteps)
 
+  const processingMessages = useMemo(
+    () => t('funnel.processing.messages', { returnObjects: true }),
+    [t],
+  )
+
   if (generationError) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-gradient-to-b from-offwhite to-nude-light/30">
@@ -166,7 +171,7 @@ export default function Onboarding() {
           <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-5">
             <AlertCircle className="w-8 h-8 text-red-400" />
           </div>
-          <h2 className="font-heading text-2xl font-bold text-brown mb-3">Oups, une erreur est survenue.</h2>
+          <h2 className="font-heading text-2xl font-bold text-brown mb-3">{t('funnel.error.title')}</h2>
           <p className="text-red-400/70 text-xs mb-8 font-mono bg-red-50 rounded-xl px-3 py-2">{generationError}</p>
           <button
             onClick={() => {
@@ -177,7 +182,7 @@ export default function Onboarding() {
             className="w-full bg-brown text-offwhite py-4 rounded-2xl font-semibold flex items-center justify-center gap-2 hover:bg-brown-light transition-colors"
           >
             <RotateCcw className="w-4 h-4" />
-            Réessayer
+            {t('funnel.error.retry')}
           </button>
         </motion.div>
       </div>
@@ -206,12 +211,8 @@ export default function Onboarding() {
             onLengthNext={handleLengthNext}
             processingFake={step === 'processing'}
             onProcessingComplete={handleProcessingComplete}
-            processingMessages={[
-              'Analyse de ta main...',
-              'Création de ton design...',
-              'Presque prête...',
-            ]}
-            processingHint="Préparation de ton aperçu — 8 secondes"
+            processingMessages={processingMessages}
+            processingHint={t('funnel.processing.hintFake')}
           />
         )
       case 'signup':

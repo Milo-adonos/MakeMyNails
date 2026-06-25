@@ -248,17 +248,26 @@ export function CreditProvider({ children }) {
   ])
 
   useEffect(() => {
-    if (!user || !isSubscribed) return
-    if (!getFunnelGenData() && !sessionStorage.getItem('mmn_pending_viz_id')) return
+    if (!user || !isSubscribed) return undefined
 
-    resumePostPaymentGenerationIfNeeded({
-      waitForActiveSubscription,
-      createVisualization,
-      completeVisualization,
-      uploadBlobUrl,
-      uploadDataUrl,
-      fetchHistory,
-    })
+    let cancelled = false
+
+    ;(async () => {
+      const stored = await getFunnelGenData()
+      if (cancelled) return
+      if (!stored && !sessionStorage.getItem('mmn_pending_viz_id')) return
+
+      resumePostPaymentGenerationIfNeeded({
+        waitForActiveSubscription,
+        createVisualization,
+        completeVisualization,
+        uploadBlobUrl,
+        uploadDataUrl,
+        fetchHistory,
+      })
+    })()
+
+    return () => { cancelled = true }
   }, [
     user?.id,
     isSubscribed,

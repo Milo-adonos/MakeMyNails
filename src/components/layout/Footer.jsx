@@ -18,21 +18,21 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="font-heading text-lg font-semibold text-offwhite mb-4">Produit</h4>
+            <h4 className="font-heading text-lg font-semibold text-offwhite mb-4">{t('footer.product')}</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#pricing" className="hover:text-beige transition-colors">Tarifs</a></li>
-              <li><a href="#steps" className="hover:text-beige transition-colors">Comment ça marche</a></li>
-              <li><a href="#testimonials" className="hover:text-beige transition-colors">Témoignages</a></li>
+              <li><a href="#pricing" className="hover:text-beige transition-colors">{t('footer.pricing')}</a></li>
+              <li><a href="#steps" className="hover:text-beige transition-colors">{t('footer.howItWorks')}</a></li>
+              <li><a href="#testimonials" className="hover:text-beige transition-colors">{t('footer.testimonials')}</a></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-heading text-lg font-semibold text-offwhite mb-4">Légal</h4>
+            <h4 className="font-heading text-lg font-semibold text-offwhite mb-4">{t('footer.legal')}</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-beige transition-colors">Mentions légales</a></li>
-              <li><a href="#" className="hover:text-beige transition-colors">CGV</a></li>
-              <li><a href="#" className="hover:text-beige transition-colors">Politique de confidentialité</a></li>
-              <li><a href="#" className="hover:text-beige transition-colors">Cookies</a></li>
+              <li><a href="#" className="hover:text-beige transition-colors">{t('footer.legalNotice')}</a></li>
+              <li><a href="#" className="hover:text-beige transition-colors">{t('footer.terms')}</a></li>
+              <li><a href="#" className="hover:text-beige transition-colors">{t('footer.privacy')}</a></li>
+              <li><a href="#" className="hover:text-beige transition-colors">{t('footer.cookies')}</a></li>
             </ul>
           </div>
         </div>

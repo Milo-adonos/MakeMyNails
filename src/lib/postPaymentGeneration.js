@@ -72,7 +72,7 @@ function buildResultFromViz(viz, stored) {
 export async function runPostPaymentGeneration(deps) {
   if (activeJob) return activeJob
 
-  const stored = getFunnelGenData()
+  const stored = await getFunnelGenData()
 
   if (!stored) {
     return null
@@ -172,8 +172,8 @@ export async function runPostPaymentGeneration(deps) {
   return activeJob
 }
 
-export function resumePostPaymentGenerationIfNeeded(deps) {
-  const stored = getFunnelGenData()
+export async function resumePostPaymentGenerationIfNeeded(deps) {
+  const stored = await getFunnelGenData()
   const pendingViz = sessionStorage.getItem(PENDING_VIZ_KEY)
 
   if (!stored && !pendingViz) {

@@ -9,8 +9,16 @@ import { trackEvent } from '../../lib/radar'
 
 import { LANDING_VIEWPORT } from '../../lib/motion'
 
-function formatPrice(price) {
-  return price.toFixed(2).replace('.', ',') + '€'
+function planI18nKey(planId) {
+  return planId === 'sub_exclusif_ia' ? 'exclusif_ia' : 'premium'
+}
+
+function formatPrice(price, language) {
+  return new Intl.NumberFormat(language === 'en' ? 'en-US' : 'fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 2,
+  }).format(price)
 }
 
 export default function SubscriptionPlans({
@@ -20,7 +28,7 @@ export default function SubscriptionPlans({
   ctaLabel,
   className = '',
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const isCompact = variant === 'compact'
   const isFunnel = variant === 'funnel'
 
@@ -35,6 +43,8 @@ export default function SubscriptionPlans({
       {SUBSCRIPTIONS.map((plan, i) => {
         const isPopular = plan.popular
         const isLoading = loading === plan.id
+        const key = planI18nKey(plan.id)
+        const features = t(`subscriptions.${key}.features`, { returnObjects: true })
 
         const card = (
           <div
@@ -55,20 +65,20 @@ export default function SubscriptionPlans({
 
             <div className="mb-5">
               <h3 className={`font-heading text-xl md:text-2xl font-semibold mb-1 ${isPopular ? 'text-offwhite' : 'text-brown'}`}>
-                {plan.name}
+                {t(`subscriptions.${key}.name`)}
               </h3>
               <div className="flex items-baseline gap-1 mt-3">
                 <span className={`font-heading text-4xl md:text-5xl font-bold ${isPopular ? 'text-offwhite' : 'text-brown'}`}>
-                  {formatPrice(plan.price)}
+                  {formatPrice(plan.price, i18n.language)}
                 </span>
                 <span className={`text-sm ${isPopular ? 'text-offwhite/60' : 'text-brown-light/60'}`}>
-                  /{plan.period}
+                  /{t(`subscriptions.${key}.period`)}
                 </span>
               </div>
             </div>
 
             <ul className={`space-y-2.5 mb-6 flex-1 ${isCompact ? 'mb-4' : ''}`}>
-              {plan.features.map((feature) => (
+              {Array.isArray(features) && features.map((feature) => (
                 <li key={feature} className="flex items-start gap-2.5">
                   <span className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
                     isPopular ? 'bg-offwhite/15' : 'bg-nude/40'

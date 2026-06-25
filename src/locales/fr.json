@@ -262,6 +262,7 @@
     "recommendations": "Dis-moi l'occasion et ta tenue — je m'occupe du reste ✨",
     "recommendationsSub": "Laisse Emma choisir pour toi ✨",
     "recommendationsLocked": "Emma est prête à te trouver la manucure parfaite 💅 Débloque-la avec Exclusif IA",
+    "looksCreated": "+2k looks créés ✨",
     "credits": "crédit",
     "credits_plural": "crédits",
     "premium": "Premium",
@@ -279,7 +280,8 @@
     "resultsIntro": "Parfait ! Voici mes recommandations pour {{occasion}}{{outfitSuffix}} ✨",
     "resultsSuffix_outfit": ", accordées à ta tenue",
     "generateCta": "Générer mes ongles pour {{occasion}} ✨",
-    "restart": "Recommencer"
+    "restart": "Recommencer",
+    "online": "En ligne"
     }
   },
   "purchase": {
@@ -294,7 +296,106 @@
   },
   "footer": {
     "tagline": "Plus jamais de mauvaises surprises chez ta prothésiste.",
-    "rights": "© 2025 MakeMyNails. Tous droits réservés."
+    "rights": "© 2025 MakeMyNails. Tous droits réservés.",
+    "product": "Produit",
+    "legal": "Légal",
+    "pricing": "Tarifs",
+    "howItWorks": "Comment ça marche",
+    "testimonials": "Témoignages",
+    "legalNotice": "Mentions légales",
+    "terms": "CGV",
+    "privacy": "Politique de confidentialité",
+    "cookies": "Cookies"
+  },
+  "subscriptions": {
+    "premium": {
+      "name": "Premium",
+      "period": "mois",
+      "features": [
+        "Générations illimitées",
+        "Sauvegarde de tes designs",
+        "Upload de tes inspis",
+        "Catalogue complet",
+        "Support prioritaire"
+      ]
+    },
+    "exclusif_ia": {
+      "name": "Exclusif IA",
+      "period": "mois",
+      "features": [
+        "Tout le plan Premium",
+        "Emma — assistante IA personnelle",
+        "Recommandations par occasion",
+        "Accord tenue & ongles",
+        "Accès prioritaire aux nouveautés"
+      ]
+    }
+  },
+  "funnel": {
+    "pricing": {
+      "title": "Débloque tes ongles parfaits",
+      "subtitle": "Annulable à tout moment, sans engagement",
+      "cta": "Choisir ce plan →",
+      "designsToday": "designs créés aujourd'hui",
+      "paymentError": "Erreur : {{message}}"
+    },
+    "signup": {
+      "title": "Crée ton compte pour débloquer",
+      "planSelected": "Plan sélectionné : {{plan}}",
+      "choosePlanFirst": "Choisis d'abord ton abonnement",
+      "planPremium": "Premium — 9,99€/mois",
+      "planExclusif": "Exclusif IA — 14,99€/mois",
+      "confirmEmail": "Confirme ton email ou reconnecte-toi pour continuer vers le paiement.",
+      "maintenance": "Les inscriptions sont temporairement suspendues.",
+      "creating": "Création…",
+      "continuePayment": "Continuer vers le paiement →",
+      "alreadyAccount": "Déjà un compte ? Connexion"
+    },
+    "checkout": {
+      "unavailable": "Paiement indisponible",
+      "backToPricing": "Retour aux tarifs",
+      "noPlanSelected": "Aucun plan sélectionné",
+      "loginRequired": "Connecte-toi pour continuer vers le paiement.",
+      "paymentFailed": "Paiement impossible",
+      "messages": [
+        "Préparation du paiement…",
+        "Redirection vers Stripe…",
+        "Presque prête…"
+      ]
+    },
+    "processing": {
+      "messages": [
+        "Analyse de ta main…",
+        "Création de ton design…",
+        "Presque prête…"
+      ],
+      "messagesFull": [
+        "Analyse de ta main…",
+        "Création de ton design…",
+        "Finalisation avec l'IA…"
+      ],
+      "hintFake": "Préparation de ton aperçu — 8 secondes",
+      "hintReal": "Génération en cours — environ 15 à 30 secondes",
+      "didYouKnow": "Le savais-tu ? 💅",
+      "facts": [
+        "Les femmes changent de design d'ongles en moyenne toutes les 3 semaines 💅",
+        "Le nail art existe depuis plus de 5000 ans — les Égyptiennes utilisaient du henné 🌿",
+        "La couleur de tes ongles peut révéler ta personnalité ✨",
+        "Le nude est la couleur d'ongles la plus demandée en salon 🤍",
+        "Les ongles poussent plus vite en été qu'en hiver ☀️",
+        "Emma a déjà aidé des milliers de filles à trouver leurs ongles parfaits 🤖",
+        "Envoyer ton design à ta nail artist réduit les erreurs de 90% 📲"
+      ],
+      "emmaMessages": [
+        "Emma analyse ton occasion…",
+        "Création de ton design sur mesure…",
+        "Presque prêt…"
+      ]
+    },
+    "error": {
+      "title": "Oups, une erreur est survenue.",
+      "retry": "Réessayer"
+    }
   },
   "appNav": {
     "home": "Accueil",
@@ -404,7 +505,16 @@
     "title": "Paiement confirmé 💅",
     "subtitle": "Ton abonnement est actif. Tu peux maintenant essayer tous les styles que tu veux.",
     "cta": "Créer ma première manucure →",
-    "redirect": "Redirection dans {{count}}s…"
+    "redirect": "Redirection dans {{count}}s…",
+    "invalidSession": "Session de paiement invalide.",
+    "backToSubscriptions": "Retour aux abonnements",
+    "activating": "Paiement reçu — activation en cours. Rafraîchis dans quelques secondes.",
+    "goToDashboard": "Aller au dashboard",
+    "generationFailed": "Paiement confirmé, mais la génération a échoué. Réessaie depuis le dashboard.",
+    "viewHistory": "Voir mon historique",
+    "generatingTitle": "Création de ton design…",
+    "generatingMessage": "Ton design parfait est en cours de création ✨ La génération prend environ 2 minutes — reste ici, le résultat va te bluffer 💅",
+    "activatingSubscription": "Activation de ton abonnement en cours…"
   },
   "historyPage": {
     "title": "Historique"
@@ -445,6 +555,52 @@
     "continue": "Continuer",
     "close": "Fermer",
     "loading": "Chargement…",
-    "error": "Une erreur est survenue"
+    "error": "Une erreur est survenue",
+    "retry": "Réessayer",
+    "generationFailed": "La génération a échoué.",
+    "notLoggedIn": "Non connectée",
+    "noPhoto": "Aucune photo fournie. Veuillez reprendre depuis le début.",
+    "funnelDataMissing": "Données du funnel introuvables. Recommence depuis le début.",
+    "downloadFailed": "Impossible de télécharger l'image"
+  },
+  "errors": {
+    "generationFailed": "La génération a échoué."
+  },
+  "emmaRecommendations": {
+    "wedding": [
+      { "name": "French Élégance", "desc": "Classique et raffiné, parfait pour le grand jour" },
+      { "name": "Nude Perlé", "desc": "Doux et lumineux avec une touche nacrée" },
+      { "name": "Glamour Rosé", "desc": "Dégradé rose pour un effet romantique" }
+    ],
+    "work": [
+      { "name": "Nude Discret", "desc": "Propre et professionnel, passe partout" },
+      { "name": "French Courte", "desc": "Classique et adapté au bureau" },
+      { "name": "Rosé Subtil", "desc": "Touche de couleur douce et élégante" }
+    ],
+    "party": [
+      { "name": "Chrome Party", "desc": "Effet miroir pour briller toute la soirée" },
+      { "name": "Nail Art Festif", "desc": "Créatif et audacieux, tu seras remarquée" },
+      { "name": "Dégradé Sunset", "desc": "Couleurs chaudes et vibrantes" }
+    ],
+    "vacation": [
+      { "name": "Corail Estival", "desc": "Couleur vive et joyeuse pour la plage" },
+      { "name": "Pastel Doux", "desc": "Tons pastel relaxants et frais" },
+      { "name": "Minimale Chic", "desc": "Simple et pratique pour voyager" }
+    ],
+    "date": [
+      { "name": "Rouge Passion", "desc": "Classique séducteur, indémodable" },
+      { "name": "French Romantique", "desc": "Élégance douce pour charmer" },
+      { "name": "Dégradé Rosé", "desc": "Romantique et féminin" }
+    ],
+    "everyday": [
+      { "name": "Nude Naturel", "desc": "Naturel et soigné au quotidien" },
+      { "name": "French Soft", "desc": "Classique léger pour tous les jours" },
+      { "name": "Couleur Douce", "desc": "Touche de couleur subtile" }
+    ],
+    "other": [
+      { "name": "Amande Chic", "desc": "Polyvalent et élégant" },
+      { "name": "Nail Art Créatif", "desc": "Original et unique à ton image" },
+      { "name": "Chrome Moderne", "desc": "Futuriste et tendance" }
+    ]
   }
 }

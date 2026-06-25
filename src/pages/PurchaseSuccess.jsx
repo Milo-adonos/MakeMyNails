@@ -2,16 +2,15 @@ import { useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Sparkles } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useCredits } from '../contexts/CreditContext'
 import { useAuth } from '../contexts/AuthContext'
 import Button from '../components/common/Button'
 import { ROUTES } from '../lib/routes'
 import { trackEvent, planKey, getPlanRevenue } from '../lib/radar'
 
-const POST_PAYMENT_MESSAGE =
-  'Ton design parfait est en cours de création ✨ La génération prend environ 2 minutes — reste ici, le résultat va te bluffer 💅'
-
 export default function PurchaseSuccess() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { pendingGeneration, startPostPaymentGeneration } = useCredits()
@@ -54,9 +53,9 @@ export default function PurchaseSuccess() {
     return (
       <div className="min-h-screen flex items-center justify-center px-6">
         <div className="text-center max-w-sm">
-          <p className="text-brown-light/70 mb-4">Session de paiement invalide.</p>
+          <p className="text-brown-light/70 mb-4">{t('purchaseSuccess.invalidSession')}</p>
           <Button onClick={() => navigate(ROUTES.dashboardPurchase)} className="w-full">
-            Retour aux abonnements
+            {t('purchaseSuccess.backToSubscriptions')}
           </Button>
         </div>
       </div>
@@ -68,10 +67,10 @@ export default function PurchaseSuccess() {
       <div className="min-h-screen flex items-center justify-center px-6">
         <div className="text-center max-w-sm">
           <p className="text-brown-light/70 mb-4">
-            Paiement reçu — activation en cours. Rafraîchis dans quelques secondes.
+            {t('purchaseSuccess.activating')}
           </p>
           <Button onClick={() => navigate(ROUTES.dashboard)} className="w-full">
-            Aller au dashboard
+            {t('purchaseSuccess.goToDashboard')}
           </Button>
         </div>
       </div>
@@ -83,10 +82,10 @@ export default function PurchaseSuccess() {
       <div className="min-h-screen flex items-center justify-center px-6">
         <div className="text-center max-w-sm">
           <p className="text-brown-light/70 mb-4">
-            Paiement confirmé, mais la génération a échoué. Réessaie depuis le dashboard.
+            {t('purchaseSuccess.generationFailed')}
           </p>
           <Button onClick={() => navigate(ROUTES.dashboardHistory)} className="w-full">
-            Voir mon historique
+            {t('purchaseSuccess.viewHistory')}
           </Button>
         </div>
       </div>
@@ -106,12 +105,12 @@ export default function PurchaseSuccess() {
           <Sparkles className="w-12 h-12 text-brown animate-pulse" />
         </div>
         <h1 className="font-heading text-3xl font-bold text-brown mb-4">
-          {isGenerating ? 'Création de ton design...' : 'Paiement confirmé ✨'}
+          {isGenerating ? t('purchaseSuccess.generatingTitle') : t('purchaseSuccess.title')}
         </h1>
         <p className="text-brown-light/80 text-base leading-relaxed mb-6">
           {isGenerating
-            ? POST_PAYMENT_MESSAGE
-            : 'Activation de ton abonnement en cours...'}
+            ? t('purchaseSuccess.generatingMessage')
+            : t('purchaseSuccess.activatingSubscription')}
         </p>
         <div className="w-8 h-8 border-2 border-nude-dark/30 border-t-brown rounded-full animate-spin mx-auto" />
       </motion.div>

@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import i18n from '../i18n'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -29,7 +30,8 @@ function getAspectRatio(width, height) {
 }
 
 /** Preserve quality — only downscale if larger than maxPx, minimal compression. */
-async function imageToBase64(source, maxPx = 2048) {
+async function imageToBase64(source, maxPx = 2048, { forStorage = false } = {}) {
+  const storageMaxPx = forStorage ? Math.min(maxPx, 1280) : maxPx
   const blob = source.startsWith('data:')
     ? await fetch(source).then((r) => r.blob())
     : await fetch(source).then((r) => r.blob())
@@ -39,11 +41,11 @@ async function imageToBase64(source, maxPx = 2048) {
     const url = URL.createObjectURL(blob)
     img.onload = () => {
       URL.revokeObjectURL(url)
-      const ratio = Math.min(1, maxPx / Math.max(img.width, img.height))
+      const ratio = Math.min(1, storageMaxPx / Math.max(img.width, img.height))
       const w = Math.round(img.width * ratio)
       const h = Math.round(img.height * ratio)
 
-      if (ratio >= 1 && blob.type === 'image/png') {
+      if (!forStorage && ratio >= 1 && blob.type === 'image/png') {
         const reader = new FileReader()
         reader.onloadend = () => resolve({
           base64: reader.result,
@@ -59,8 +61,8 @@ async function imageToBase64(source, maxPx = 2048) {
       canvas.height = h
       canvas.getContext('2d').drawImage(img, 0, 0, w, h)
 
-      const mime = blob.type === 'image/png' ? 'image/png' : 'image/jpeg'
-      const quality = maxPx <= 512 ? 0.72 : mime === 'image/png' ? undefined : 0.98
+      const mime = forStorage ? 'image/jpeg' : (blob.type === 'image/png' ? 'image/png' : 'image/jpeg')
+      const quality = forStorage ? 0.82 : (storageMaxPx <= 512 ? 0.72 : mime === 'image/png' ? undefined : 0.98)
       canvas.toBlob(
         (output) => {
           const reader = new FileReader()
@@ -103,7 +105,7 @@ export async function generateNailVisualization({
   aspectRatio: aspectRatioOverride,
   source: sourceOverride,
 }, visualizationId = null) {
-  if (!photo) throw new Error('Aucune photo fournie. Veuillez reprendre depuis le début.')
+  if (!photo) throw new Error(i18n.t('common.noPhoto'))
 
   if (import.meta.env.VITE_MOCK_GENERATION === 'true') {
     await new Promise((r) => setTimeout(r, 2500))
@@ -168,7 +170,7 @@ export async function generateNailVisualization({
   })
 
   const data = await res.json()
-  if (!res.ok) throw new Error(data.error || 'Generation failed')
+  if (!res.ok) throw new Error(data.error || i18n.t('common.generationFailed'))
 
   return {
     id: visualizationId || crypto.randomUUID(),
@@ -183,18 +185,19 @@ export async function generateNailVisualization({
   }
 }
 
-/** Sérialise le funnel pour génération réelle après paiement (base64, survit à Stripe). */
+/** Sérialise le funnel pour génération réelle après paiement (base64 compressé, survit à Stripe). */
 export async function serializeFunnelGenPayload(genData) {
-  const { base64: photoDataUrl, aspectRatio } = await imageToBase64(genData.photo, 2048)
+  const storageOpts = { forStorage: true }
+  const { base64: photoDataUrl, aspectRatio } = await imageToBase64(genData.photo, 1280, storageOpts)
 
   let inspirationDataUrl = null
   if (genData.inspirationPhoto) {
-    inspirationDataUrl = (await imageToBase64(genData.inspirationPhoto, 2048)).base64
+    inspirationDataUrl = (await imageToBase64(genData.inspirationPhoto, 1280, storageOpts)).base64
   }
 
   let outfitDataUrl = null
   if (genData.outfitPhoto) {
-    outfitDataUrl = (await imageToBase64(genData.outfitPhoto, 2048)).base64
+    outfitDataUrl = (await imageToBase64(genData.outfitPhoto, 1280, storageOpts)).base64
   }
 
   const mode = genData.mode || (genData.inspirationPhoto ? 'inspiration' : 'onboarding')
@@ -216,7 +219,7 @@ export async function serializeFunnelGenPayload(genData) {
 
 /** Génération finale post-paiement (Kie.ai GPT Image 2) à partir des données funnel persistées. */
 export async function generateFromFunnelPayload(stored, visualizationId = null) {
-  if (!stored?.photoDataUrl) throw new Error('Données du funnel introuvables. Recommence depuis le début.')
+  if (!stored?.photoDataUrl) throw new Error(i18n.t('common.funnelDataMissing'))
 
   return generateNailVisualization({
     photo: stored.photoDataUrl,

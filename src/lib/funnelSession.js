@@ -1,10 +1,15 @@
 import { createCheckoutSession, openStripeCheckout } from './stripe'
 import { supabase } from './supabase'
+import i18n from '../i18n'
+import {
+  persistFunnelGenData as persistGenData,
+  getFunnelGenData as readGenData,
+  clearFunnelGenData as removeGenData,
+} from './funnelGenStorage'
 
 const SELECTED_PLAN_KEY = 'selected_plan'
 const RESULT_KEY = 'funnel_pending_result'
 const STEP_KEY = 'funnel_step'
-const GEN_DATA_KEY = 'funnel_pending_gen'
 
 export function setSelectedPlan(planId) {
   const value = planId === 'sub_exclusif_ia' ? 'exclusif_ia' : 'premium'
@@ -58,34 +63,28 @@ export function clearFunnelStep() {
   sessionStorage.removeItem(STEP_KEY)
 }
 
-export function persistFunnelGenData(data) {
-  if (!data) return
-  localStorage.setItem(GEN_DATA_KEY, JSON.stringify(data))
+export async function persistFunnelGenData(data) {
+  return persistGenData(data)
 }
 
-export function getFunnelGenData() {
-  try {
-    const raw = localStorage.getItem(GEN_DATA_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch {
-    return null
-  }
+export async function getFunnelGenData() {
+  return readGenData()
 }
 
-export function clearFunnelGenData() {
-  localStorage.removeItem(GEN_DATA_KEY)
+export async function clearFunnelGenData() {
+  return removeGenData()
 }
 
 export function clearFunnelSession() {
   clearSelectedPlan()
   clearFunnelResult()
   clearFunnelStep()
-  clearFunnelGenData()
+  void clearFunnelGenData()
 }
 
 export function getPlanLabel(plan) {
-  if (plan === 'exclusif_ia') return 'Exclusif IA — 14,99€/mois'
-  if (plan === 'premium') return 'Premium — 9,99€/mois'
+  if (plan === 'exclusif_ia') return i18n.t('funnel.signup.planExclusif')
+  if (plan === 'premium') return i18n.t('funnel.signup.planPremium')
   return null
 }
 
@@ -121,11 +120,11 @@ export async function waitForAuthSession(maxAttempts = 24, intervalMs = 250) {
 
 export async function startStripeCheckoutFromSelectedPlan() {
   const stripePlanId = getSelectedPlanStripeId()
-  if (!stripePlanId) throw new Error('Aucun plan sélectionné')
+  if (!stripePlanId) throw new Error(i18n.t('funnel.checkout.noPlanSelected'))
 
   const session = await waitForAuthSession()
   if (!session?.access_token) {
-    throw new Error('Connecte-toi pour continuer vers le paiement.')
+    throw new Error(i18n.t('funnel.checkout.loginRequired'))
   }
 
   const url = await createCheckoutSession(stripePlanId, session.access_token)

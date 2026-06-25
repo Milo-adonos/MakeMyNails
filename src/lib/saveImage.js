@@ -1,7 +1,9 @@
+import i18n from '../i18n'
+
 /** Save an image to the device (gallery / downloads) — mobile-friendly. */
 export async function saveImageToGallery(imageUrl, filename = 'makemynails.jpg') {
   const res = await fetch(imageUrl, { mode: 'cors' })
-  if (!res.ok) throw new Error('Impossible de télécharger l\'image')
+  if (!res.ok) throw new Error(i18n.t('common.downloadFailed'))
   const blob = await res.blob()
   const type = blob.type || 'image/jpeg'
   const file = new File([blob], filename, { type })

@@ -72,7 +72,7 @@ export default function RecommendationCard({ onClick }) {
             <div className="w-6 h-6 rounded-full bg-amber-200 border-2 border-nude-light" />
             <div className="w-6 h-6 rounded-full bg-violet-200 border-2 border-nude-light" />
           </div>
-          <span className="text-xs text-brown-light/50">+2k looks créés ✨</span>
+          <span className="text-xs text-brown-light/50">{t('dashboard.looksCreated')}</span>
         </div>
       </div>
 

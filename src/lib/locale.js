@@ -7,13 +7,17 @@ export function normalizeLocale(language) {
   return 'fr'
 }
 
-/** Prefer saved choice, then device language (navigator.languages). */
+/** Prefer saved choice, then shell-detected language, then device language. */
 export function detectDeviceLanguage() {
   try {
     const stored = localStorage.getItem(LOCALE_STORAGE_KEY)
     if (stored) return normalizeLocale(stored)
   } catch {
     // private browsing
+  }
+
+  if (typeof window !== 'undefined' && window.__MMN_LANG__) {
+    return normalizeLocale(window.__MMN_LANG__)
   }
 
   const candidates = typeof navigator !== 'undefined'

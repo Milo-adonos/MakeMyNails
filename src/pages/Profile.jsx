@@ -57,7 +57,7 @@ export default function Profile() {
     setPortalLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.access_token) throw new Error('Non connectée')
+      if (!session?.access_token) throw new Error(t('common.notLoggedIn'))
       const url = await createPortalSession(session.access_token)
       window.location.href = url
     } catch (err) {

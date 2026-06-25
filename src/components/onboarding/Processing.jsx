@@ -1,31 +1,25 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-
-const DEFAULT_MESSAGES = [
-  'Analyse de ta main...',
-  'Création de ton design...',
-  'Finalisation avec l\'IA...',
-]
-
-const FACTS = [
-  'Les femmes changent de design d\'ongles en moyenne toutes les 3 semaines 💅',
-  'Le nail art existe depuis plus de 5000 ans — les Égyptiennes utilisaient du henné 🌿',
-  'La couleur de tes ongles peut révéler ta personnalité ✨',
-  'Le nude est la couleur d\'ongles la plus demandée en salon 🤍',
-  'Les ongles poussent plus vite en été qu\'en hiver ☀️',
-  'Emma a déjà aidé des milliers de filles à trouver leurs ongles parfaits 🤖',
-  'Envoyer ton design à ta nail artist réduit les erreurs de 90% 📲',
-]
+import { useTranslation } from 'react-i18next'
 
 const FAKE_DURATION_MS = 8000
 
 export default function Processing({
-  messages = DEFAULT_MESSAGES,
+  messages: messagesProp,
   fake = false,
   durationMs = FAKE_DURATION_MS,
   hint,
   onComplete,
 }) {
+  const { t } = useTranslation()
+  const messages = useMemo(
+    () => messagesProp || t('funnel.processing.messagesFull', { returnObjects: true }),
+    [messagesProp, t],
+  )
+  const facts = useMemo(
+    () => t('funnel.processing.facts', { returnObjects: true }),
+    [t],
+  )
   const [messageIndex, setMessageIndex] = useState(0)
   const [factIndex, setFactIndex] = useState(0)
   const [progress, setProgress] = useState(0)
@@ -40,10 +34,10 @@ export default function Processing({
 
   useEffect(() => {
     const factInterval = setInterval(() => {
-      setFactIndex((prev) => (prev + 1) % FACTS.length)
+      setFactIndex((prev) => (prev + 1) % facts.length)
     }, 5000)
     return () => clearInterval(factInterval)
-  }, [])
+  }, [facts.length])
 
   useEffect(() => {
     if (!fake) return undefined
@@ -71,6 +65,10 @@ export default function Processing({
     frameId = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frameId)
   }, [fake, durationMs, onComplete])
+
+  const defaultHint = fake
+    ? t('funnel.processing.hintFake')
+    : t('funnel.processing.hintReal')
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-offwhite to-nude-light/30">
@@ -112,16 +110,14 @@ export default function Processing({
             )}
           </div>
           <p className="text-center text-xs text-brown-light/50 mt-4">
-            {hint || (fake
-              ? 'Préparation de ton aperçu — 8 secondes'
-              : 'Génération en cours — environ 15 à 30 secondes')}
+            {hint || defaultHint}
           </p>
         </div>
 
         <div className="w-full max-w-md mt-10">
           <div className="rounded-2xl bg-nude/45 border border-nude-dark/15 px-5 py-4 shadow-sm backdrop-blur-sm">
             <p className="font-heading text-base font-semibold text-brown text-center mb-3">
-              Le savais-tu ? 💅
+              {t('funnel.processing.didYouKnow')}
             </p>
             <div className="min-h-[3.25rem] flex items-center justify-center overflow-hidden">
               <AnimatePresence mode="wait">
@@ -133,7 +129,7 @@ export default function Processing({
                   transition={{ duration: 0.5, ease: 'easeInOut' }}
                   className="text-sm text-brown-light/85 text-center leading-relaxed px-1"
                 >
-                  {FACTS[factIndex]}
+                  {facts[factIndex]}
                 </motion.p>
               </AnimatePresence>
             </div>
