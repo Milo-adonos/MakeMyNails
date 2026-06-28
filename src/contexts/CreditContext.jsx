@@ -25,10 +25,11 @@ export function CreditProvider({ children }) {
     error: null,
   })
 
-  const credits = profile?.credits ?? localCredits
+  const creditsRemaining = profile?.credits_remaining ?? profile?.credits ?? localCredits
   const isSubscribed = subscription?.status === 'active'
     && (!subscription.current_period_end || new Date(subscription.current_period_end) > new Date())
-  const hasEmmaAccess = isSubscribed && subscription?.plan === 'exclusif_ia'
+  const isUnlimited = isSubscribed && subscription?.plan === 'exclusif_ia'
+  const hasEmmaAccess = isUnlimited
 
   const fetchHistory = useCallback(async () => {
     if (!user) return []
@@ -84,12 +85,13 @@ export function CreditProvider({ children }) {
 
   useEffect(() => subscribePostPaymentGeneration(setPendingGeneration), [])
 
-  const canGenerate = useCallback(() => isSubscribed, [isSubscribed])
-
-  const useCredit = useCallback(async () => {
+  const canGenerate = useCallback(() => {
     if (!isSubscribed) return false
-    return true
-  }, [isSubscribed])
+    if (isUnlimited) return true
+    return creditsRemaining > 0
+  }, [isSubscribed, isUnlimited, creditsRemaining])
+
+  const useCredit = useCallback(async () => canGenerate(), [canGenerate])
 
   const addCredits = useCallback(async (packId) => {
     if (!user) return
@@ -124,9 +126,10 @@ export function CreditProvider({ children }) {
         p_viz_id: vizId,
         p_result_image_url: resultImageUrl,
       })
+      await refreshProfile()
       await fetchHistory()
     }
-  }, [user, fetchHistory])
+  }, [user, refreshProfile, fetchHistory])
 
   const addToHistory = useCallback((result) => {
     if (!result?.id) return
@@ -287,7 +290,9 @@ export function CreditProvider({ children }) {
 
   return (
     <CreditContext.Provider value={{
-      credits,
+      credits: creditsRemaining,
+      creditsRemaining,
+      isUnlimited,
       canGenerate,
       useCredit,
       addCredits,

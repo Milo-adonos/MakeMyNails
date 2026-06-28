@@ -243,6 +243,10 @@
     "getMoreLooks": "Get more manicures →",
     "manageSubscription": "Manage my Premium →",
     "noCredits": "You have no more manicures available",
+    "noCreditsPremium": "You've used your 20 generations this month. Upgrade to Exclusif IA for unlimited generations 💅",
+    "upgradeToExclusif": "Upgrade to Exclusif IA →",
+    "creditsRemainingSuffix": "remaining this month",
+    "creditsReset": "Renews on {{date}}",
     "noSubscription": "Subscription required to create a manicure",
     "subscribeCta": "View plans",
     "buyCredits": "Get more manicures",
@@ -312,7 +316,7 @@
       "name": "Premium",
       "period": "month",
       "features": [
-        "Unlimited generations",
+        "20 generations per month",
         "Save your designs",
         "Upload your inspo photos",
         "Full catalog",
@@ -323,19 +327,22 @@
       "name": "Exclusif IA",
       "period": "month",
       "features": [
+        "Unlimited generations",
         "Everything in Premium",
         "Emma — personal AI assistant",
         "Recommendations by occasion",
-        "Outfit & nails matching",
-        "Early access to new features"
+        "Outfit & nails matching"
       ]
     }
   },
   "funnel": {
     "pricing": {
-      "title": "Unlock your perfect nails",
+      "title": "Unlock your perfect nails ✨",
       "subtitle": "Cancel anytime, no commitment",
-      "cta": "Choose this plan →",
+      "cta": "Unlock my nails →",
+      "discountBadge": "-50%",
+      "urgency": "Launch offer — limited-time pricing ⏳",
+      "moneyBack": "30-day money-back guarantee",
       "designsToday": "designs created today",
       "paymentError": "Error: {{message}}"
     },
@@ -478,7 +485,8 @@
     "yourLooks": "Your manicures",
     "looksToCreate": "manicure to create",
     "looksToCreatePlural": "manicures to create",
-    "unlimitedLooks": "unlimited manicures",
+    "looksRemaining": "generations remaining this month",
+    "unlimitedLooks": "unlimited generations",
     "getMore": "Get more",
     "subscribe": "Subscribe",
     "subscriptionRequired": "Subscription required",

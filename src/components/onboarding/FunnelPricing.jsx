@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCredits } from '../../contexts/CreditContext'
 import { setSelectedPlan } from '../../lib/funnelSession'
-import SubscriptionPlans from '../pricing/SubscriptionPlans'
+import FunnelPricingPlans from '../pricing/FunnelPricingPlans'
 import { ROUTES } from '../../lib/routes'
 import { trackEvent, planKey } from '../../lib/radar'
 
@@ -16,6 +16,10 @@ export default function FunnelPricing({ onGoSignup }) {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const { addCredits } = useCredits()
+
+  useEffect(() => {
+    setSelectedPlan('sub_exclusif_ia')
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -50,12 +54,12 @@ export default function FunnelPricing({ onGoSignup }) {
   const numberLocale = i18n.language === 'en' ? 'en-US' : 'fr-FR'
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-offwhite to-nude-light/30 px-4 py-12">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-b from-offwhite to-nude-light/30 px-4 py-10 md:py-12">
+      <div className="max-w-lg mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-10"
+          className="text-center mb-8"
         >
           <h1 className="font-heading text-3xl md:text-4xl font-bold text-brown mb-2">
             {t('funnel.pricing.title')}
@@ -65,12 +69,7 @@ export default function FunnelPricing({ onGoSignup }) {
           </p>
         </motion.div>
 
-        <SubscriptionPlans
-          variant="funnel"
-          loading={loading}
-          onSelect={handleSelect}
-          ctaLabel={t('funnel.pricing.cta')}
-        />
+        <FunnelPricingPlans loading={loading} onSelect={handleSelect} />
 
         <motion.div
           initial={{ opacity: 0 }}

@@ -12,7 +12,7 @@ import { ROUTES } from '../lib/routes'
 
 export default function Profile() {
   const { t, i18n } = useTranslation()
-  const { purchases, subscription, isSubscribed } = useCredits()
+  const { purchases, subscription, isSubscribed, isUnlimited, creditsRemaining } = useCredits()
   const { user, profile, logout, login, signup, isAuthenticated } = useAuth()
   const navigate = useNavigate()
 
@@ -25,7 +25,7 @@ export default function Profile() {
   const [portalLoading, setPortalLoading] = useState(false)
 
   const planLabel = subscription?.plan === 'exclusif_ia' ? 'Exclusif IA' : 'Premium'
-  const looksDisplay = isSubscribed ? '∞' : '0'
+  const looksDisplay = isUnlimited ? '∞' : (isSubscribed ? String(creditsRemaining) : '0')
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -160,7 +160,9 @@ export default function Profile() {
                     <>
                       <span className="font-semibold text-brown">{looksDisplay}</span>
                       {' '}
-                      {t('profilePage.unlimitedLooks')}
+                      {isUnlimited
+                        ? t('profilePage.unlimitedLooks')
+                        : t('profilePage.looksRemaining')}
                     </>
                   ) : (
                     t('profilePage.subscriptionRequired')

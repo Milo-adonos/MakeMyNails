@@ -7,11 +7,13 @@ export const SUBSCRIPTIONS = [
   {
     id: 'sub_premium',
     price: 9.99,
+    originalPrice: 19.99,
     popular: false,
   },
   {
     id: 'sub_exclusif_ia',
     price: 14.99,
+    originalPrice: 29.99,
     popular: true,
   },
 ]

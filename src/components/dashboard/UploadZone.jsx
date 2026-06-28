@@ -6,10 +6,14 @@ import { useCredits } from '../../contexts/CreditContext'
 import { ROUTES } from '../../lib/routes'
 
 export default function UploadZone({ onStart }) {
-  const { canGenerate, isSubscribed } = useCredits()
+  const { canGenerate, isSubscribed, isUnlimited, creditsRemaining, subscription } = useCredits()
   const { t } = useTranslation()
 
   const canCreate = canGenerate()
+  const isPremiumExhausted = isSubscribed
+    && subscription?.plan === 'premium'
+    && !isUnlimited
+    && creditsRemaining <= 0
 
   return (
     <motion.div
@@ -39,13 +43,17 @@ export default function UploadZone({ onStart }) {
               <AlertCircle className="w-6 h-6 text-brown-light/50" />
             </div>
             <p className="text-sm font-medium text-brown mb-1">
-              {isSubscribed ? t('dashboard.noCredits') : t('dashboard.noSubscription')}
+              {isPremiumExhausted
+                ? t('dashboard.noCreditsPremium')
+                : isSubscribed
+                  ? t('dashboard.noCredits')
+                  : t('dashboard.noSubscription')}
             </p>
             <Link
               to={ROUTES.dashboardPurchase}
               className="inline-flex items-center gap-2 bg-brown text-offwhite px-6 py-3 rounded-2xl font-medium text-sm hover:bg-brown-light transition-colors mt-4"
             >
-              {t('dashboard.subscribeCta')}
+              {isPremiumExhausted ? t('dashboard.upgradeToExclusif') : t('dashboard.subscribeCta')}
             </Link>
           </div>
         )}

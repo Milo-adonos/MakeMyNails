@@ -8,7 +8,7 @@ import { ROUTES } from '../../lib/routes'
 export default function Navbar() {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
-  const { credits, isSubscribed } = useCredits()
+  const { creditsRemaining, isSubscribed, isUnlimited } = useCredits()
   const location = useLocation()
 
   const isApp = location.pathname.startsWith(ROUTES.dashboard)
@@ -21,7 +21,7 @@ export default function Navbar() {
     { to: ROUTES.dashboardProfile, icon: User, label: t('appNav.profile') },
   ]
 
-  const creditsDisplay = isSubscribed ? '∞' : '0'
+  const creditsDisplay = isUnlimited ? '∞' : (isSubscribed ? String(creditsRemaining) : '0')
   const creditsLink = isSubscribed ? ROUTES.dashboardProfile : ROUTES.dashboardPurchase
 
   return (

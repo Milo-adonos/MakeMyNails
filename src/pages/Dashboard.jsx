@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import UploadZone from '../components/dashboard/UploadZone'
+import CreditCounter from '../components/dashboard/CreditCounter'
 import RecommendationCard from '../components/dashboard/RecommendationCard'
 import RecommendationChat from '../components/dashboard/RecommendationChat'
 import NewVisualizationFlow from '../components/dashboard/NewVisualizationFlow'
@@ -198,6 +199,7 @@ export default function Dashboard() {
     <>
       <div className="app-shell px-4">
         <div className="max-w-lg mx-auto space-y-6">
+          <CreditCounter />
           <UploadZone onStart={() => setFlowOpen(true)} />
           {isSubscribed && unlockedResult && (
             <UnlockedDesignCard result={unlockedResult} onView={handleViewDesign} />

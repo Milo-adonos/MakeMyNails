@@ -243,6 +243,10 @@
     "getMoreLooks": "Obtenir plus de manucures →",
     "manageSubscription": "Gérer mon Premium →",
     "noCredits": "Tu n'as plus de manucures disponibles",
+    "noCreditsPremium": "Tu as utilisé tes 20 générations ce mois-ci. Passe à Exclusif IA pour des générations illimitées 💅",
+    "upgradeToExclusif": "Passer à Exclusif IA →",
+    "creditsRemainingSuffix": "restantes ce mois-ci",
+    "creditsReset": "Renouvellement le {{date}}",
     "noSubscription": "Abonnement requis pour créer une manucure",
     "subscribeCta": "Voir les abonnements",
     "buyCredits": "Obtenir plus de manucures",
@@ -312,7 +316,7 @@
       "name": "Premium",
       "period": "mois",
       "features": [
-        "Générations illimitées",
+        "20 générations par mois",
         "Sauvegarde de tes designs",
         "Upload de tes inspis",
         "Catalogue complet",
@@ -323,19 +327,22 @@
       "name": "Exclusif IA",
       "period": "mois",
       "features": [
+        "Générations illimitées",
         "Tout le plan Premium",
         "Emma — assistante IA personnelle",
         "Recommandations par occasion",
-        "Accord tenue & ongles",
-        "Accès prioritaire aux nouveautés"
+        "Accord tenue & ongles"
       ]
     }
   },
   "funnel": {
     "pricing": {
-      "title": "Débloque tes ongles parfaits",
+      "title": "Débloque tes ongles parfaits ✨",
       "subtitle": "Annulable à tout moment, sans engagement",
-      "cta": "Choisir ce plan →",
+      "cta": "Débloquer mes ongles →",
+      "discountBadge": "-50%",
+      "urgency": "Offre de lancement — prix limité ⏳",
+      "moneyBack": "Satisfait ou remboursée 30 jours",
       "designsToday": "designs créés aujourd'hui",
       "paymentError": "Erreur : {{message}}"
     },
@@ -478,7 +485,8 @@
     "yourLooks": "Tes manucures",
     "looksToCreate": "manucure à créer",
     "looksToCreatePlural": "manucures à créer",
-    "unlimitedLooks": "manucures illimitées",
+    "looksRemaining": "générations restantes ce mois-ci",
+    "unlimitedLooks": "générations illimitées",
     "getMore": "Obtenir plus",
     "subscribe": "S'abonner",
     "subscriptionRequired": "Abonnement requis",
