@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
-import { getSelectedPlan, persistFunnelStep } from '../lib/funnelSession'
+import { resolvePostAuthPath } from '../lib/funnelSession'
 import GoogleSignInButton from '../components/auth/GoogleSignInButton'
 import { isMaintenanceMode } from '../lib/maintenance'
 import { ROUTES } from '../lib/routes'
@@ -28,12 +28,10 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
 
   const redirectAfterAuth = async () => {
-    if (getSelectedPlan() || redirect === ROUTES.stripeCheckout) {
-      persistFunnelStep('checkout')
-      navigate(ROUTES.stripeCheckout, { replace: true })
-      return
-    }
-    navigate(redirect === '/' ? ROUTES.dashboard : redirect, { replace: true })
+    const target = await resolvePostAuthPath({
+      fallback: redirect === '/' ? ROUTES.dashboard : redirect,
+    })
+    navigate(target, { replace: true })
   }
 
   useEffect(() => {

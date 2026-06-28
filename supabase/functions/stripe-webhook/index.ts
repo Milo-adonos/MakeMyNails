@@ -244,6 +244,42 @@ serve(async (req) => {
     await markEventProcessed(supabase, event.id, event.type, userId)
   }
 
+  if (event.type === 'customer.subscription.updated') {
+    const subscription = event.data.object as Stripe.Subscription
+    const userId = subscription.metadata?.userId
+      || await resolveUserId(supabase, subscription)
+
+    if (userId) {
+      const packId = resolvePackId(subscription.metadata)
+      const plan = planLabel(packId)
+
+      await supabase
+        .from('subscriptions')
+        .update({
+          status: subscription.status === 'active' || subscription.status === 'trialing'
+            ? 'active'
+            : subscription.status,
+          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          ...(plan ? { plan } : {}),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', userId)
+        .eq('stripe_subscription_id', subscription.id)
+
+      // Garder l'accès tant que Stripe considère l'abonnement actif (y compris cancel_at_period_end)
+      const stillEntitled = subscription.status === 'active' || subscription.status === 'trialing'
+      if (!stillEntitled) {
+        await supabase.rpc('cancel_subscription_for_user', {
+          p_user_id: userId,
+          p_stripe_subscription_id: subscription.id,
+        })
+      }
+
+      await markEventProcessed(supabase, event.id, event.type, userId)
+    }
+  }
+
   if (event.type === 'customer.subscription.deleted') {
     const subscription = event.data.object as Stripe.Subscription
     const userId = subscription.metadata?.userId

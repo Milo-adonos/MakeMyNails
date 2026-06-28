@@ -63,7 +63,7 @@ serve(async (req) => {
       line_items: [{ price: priceId, quantity: 1 }],
       allow_promotion_codes: true,
       success_url: `${appUrl}/dashboard/purchase/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appUrl}/pricing`,
+      cancel_url: `${appUrl}/pricing?payment=canceled`,
       client_reference_id: user.id,
       customer_email: user.email,
       metadata: { packId, userId: user.id },

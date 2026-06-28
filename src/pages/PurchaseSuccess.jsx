@@ -8,25 +8,39 @@ import { useAuth } from '../contexts/AuthContext'
 import Button from '../components/common/Button'
 import { ROUTES } from '../lib/routes'
 import { trackEvent, planKey, getPlanRevenue } from '../lib/radar'
+import {
+  getFunnelGenData,
+  clearFunnelCheckoutState,
+} from '../lib/funnelSession'
 
 export default function PurchaseSuccess() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { pendingGeneration, startPostPaymentGeneration } = useCredits()
+  const {
+    pendingGeneration,
+    startPostPaymentGeneration,
+    waitForActiveSubscription,
+    fetchSubscription,
+  } = useCredits()
   const { refreshProfile, user } = useAuth()
   const startedRef = useRef(false)
   const purchaseTrackedRef = useRef(false)
   const sessionId = searchParams.get('session_id')
 
   useEffect(() => {
-    if (!sessionId || startedRef.current) return
+    if (!sessionId || startedRef.current || !user) return
     startedRef.current = true
-    refreshProfile()
 
-    startPostPaymentGeneration({
-      onSubscriptionReady: (sub) => {
-        if (!purchaseTrackedRef.current) {
+    const run = async () => {
+      await refreshProfile()
+      await fetchSubscription()
+
+      const stored = await getFunnelGenData()
+
+      if (!stored) {
+        const sub = await waitForActiveSubscription(25)
+        if (sub && !purchaseTrackedRef.current) {
           purchaseTrackedRef.current = true
           trackEvent('purchase', {
             plan: planKey(sub.plan),
@@ -34,9 +48,40 @@ export default function PurchaseSuccess() {
             source: 'stripe',
           }, getPlanRevenue(sub.plan))
         }
-      },
-    })
-  }, [sessionId, user?.id, startPostPaymentGeneration, refreshProfile])
+        clearFunnelCheckoutState()
+        await refreshProfile()
+        await fetchSubscription()
+        navigate(ROUTES.dashboard, { replace: true })
+        return
+      }
+
+      startPostPaymentGeneration({
+        onSubscriptionReady: async (sub) => {
+          clearFunnelCheckoutState()
+          await refreshProfile()
+          await fetchSubscription()
+          if (!purchaseTrackedRef.current) {
+            purchaseTrackedRef.current = true
+            trackEvent('purchase', {
+              plan: planKey(sub.plan),
+              placement: 'stripe_success',
+              source: 'stripe',
+            }, getPlanRevenue(sub.plan))
+          }
+        },
+      })
+    }
+
+    run()
+  }, [
+    sessionId,
+    user?.id,
+    startPostPaymentGeneration,
+    refreshProfile,
+    fetchSubscription,
+    waitForActiveSubscription,
+    navigate,
+  ])
 
   useEffect(() => {
     const result = pendingGeneration.result
@@ -84,8 +129,8 @@ export default function PurchaseSuccess() {
           <p className="text-brown-light/70 mb-4">
             {t('purchaseSuccess.generationFailed')}
           </p>
-          <Button onClick={() => navigate(ROUTES.dashboardHistory)} className="w-full">
-            {t('purchaseSuccess.viewHistory')}
+          <Button onClick={() => navigate(ROUTES.dashboard)} className="w-full">
+            {t('purchaseSuccess.goToDashboard')}
           </Button>
         </div>
       </div>

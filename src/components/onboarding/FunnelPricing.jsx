@@ -1,25 +1,36 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCredits } from '../../contexts/CreditContext'
-import { setSelectedPlan } from '../../lib/funnelSession'
+import { setSelectedPlan, persistFunnelStep, getActiveSubscription, clearFunnelCheckoutState } from '../../lib/funnelSession'
 import FunnelPricingPlans from '../pricing/FunnelPricingPlans'
 import { ROUTES } from '../../lib/routes'
 import { trackEvent, planKey } from '../../lib/radar'
 
 export default function FunnelPricing({ onGoSignup }) {
   const { t, i18n } = useTranslation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [designCount, setDesignCount] = useState(1247)
   const [loading, setLoading] = useState(null)
+  const [paymentNotice, setPaymentNotice] = useState(null)
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const { addCredits } = useCredits()
 
   useEffect(() => {
-    setSelectedPlan('sub_exclusif_ia')
-  }, [])
+    const status = searchParams.get('payment')
+    if (status === 'canceled') {
+      setPaymentNotice(t('funnel.pricing.paymentCanceled'))
+      searchParams.delete('payment')
+      setSearchParams(searchParams, { replace: true })
+    } else if (status === 'failed') {
+      setPaymentNotice(t('funnel.pricing.paymentFailed'))
+      searchParams.delete('payment')
+      setSearchParams(searchParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams, t])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -30,6 +41,7 @@ export default function FunnelPricing({ onGoSignup }) {
 
   const handleSelect = async (planId) => {
     setSelectedPlan(planId)
+    persistFunnelStep('signup')
     trackEvent('plan_selected', { plan: planKey(planId), placement: 'funnel_pricing' })
 
     if (!isAuthenticated) {
@@ -41,12 +53,22 @@ export default function FunnelPricing({ onGoSignup }) {
       return
     }
 
+    const activeSub = user ? await getActiveSubscription(user.id) : null
+    if (activeSub) {
+      clearFunnelCheckoutState()
+      navigate(ROUTES.dashboard, { replace: true })
+      return
+    }
+
     setLoading(planId)
     try {
+      persistFunnelStep('checkout')
       await addCredits(planId)
     } catch (err) {
       console.error(err)
-      alert(t('funnel.pricing.paymentError', { message: err?.message || t('funnel.checkout.paymentFailed') }))
+      setPaymentNotice(t('funnel.pricing.paymentError', {
+        message: err?.message || t('funnel.checkout.paymentFailed'),
+      }))
       setLoading(null)
     }
   }
@@ -68,6 +90,16 @@ export default function FunnelPricing({ onGoSignup }) {
             {t('funnel.pricing.subtitle')}
           </p>
         </motion.div>
+
+        {paymentNotice && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 rounded-2xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-600 text-center"
+          >
+            {paymentNotice}
+          </motion.div>
+        )}
 
         <FunnelPricingPlans loading={loading} onSelect={handleSelect} />
 

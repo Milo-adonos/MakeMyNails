@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertCircle, RotateCcw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '../contexts/AuthContext'
 import Welcome from '../components/onboarding/Welcome'
 import ManicureSelectionSteps from '../components/funnel/ManicureSelectionSteps'
 import FunnelSignup from '../components/onboarding/FunnelSignup'
@@ -13,8 +14,11 @@ import {
   persistFunnelStep,
   getFunnelStep,
   persistFunnelGenData,
+  getSelectedPlan,
+  getActiveSubscription,
+  clearFunnelCheckoutState,
 } from '../lib/funnelSession'
-import { FUNNEL_STEP_PATH, funnelStepFromPath } from '../lib/routes'
+import { FUNNEL_STEP_PATH, funnelStepFromPath, ROUTES } from '../lib/routes'
 import {
   buildGenPayload,
   EMPTY_MANICURE_DATA,
@@ -27,6 +31,7 @@ export default function Onboarding() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
+  const { isAuthenticated, user } = useAuth()
   const processingRef = useRef(null)
   const preselectHandled = useRef(false)
   const restoredRef = useRef(false)
@@ -80,6 +85,33 @@ export default function Onboarding() {
     persistFunnelStep(targetStep)
     navigate(FUNNEL_STEP_PATH[targetStep], { replace: true })
   }, [location.pathname, navigate])
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return undefined
+
+    const fromPath = funnelStepFromPath(location.pathname)
+    if (!fromPath || !['signup', 'checkout'].includes(fromPath)) return undefined
+
+    let cancelled = false
+
+    ;(async () => {
+      const activeSub = await getActiveSubscription(user.id)
+      if (cancelled) return
+
+      if (activeSub) {
+        clearFunnelCheckoutState()
+        navigate(ROUTES.dashboard, { replace: true })
+        return
+      }
+
+      if (fromPath === 'signup' && getSelectedPlan()) {
+        persistFunnelStep('checkout')
+        navigate(ROUTES.stripeCheckout, { replace: true })
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [isAuthenticated, user?.id, location.pathname, navigate])
 
   const enterProcessing = useCallback((genData) => {
     if (!genData.photo) {

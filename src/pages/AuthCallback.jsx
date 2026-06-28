@@ -1,11 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import {
-  getSelectedPlan,
-  persistFunnelStep,
-  waitForAuthSession,
-} from '../lib/funnelSession'
+import { resolvePostAuthPath, waitForAuthSession } from '../lib/funnelSession'
 import { ROUTES } from '../lib/routes'
 
 export default function AuthCallback() {
@@ -26,15 +22,8 @@ export default function AuthCallback() {
         return
       }
 
-      const selectedPlan = getSelectedPlan()
-
-      if (selectedPlan) {
-        persistFunnelStep('checkout')
-        navigate(ROUTES.stripeCheckout, { replace: true })
-        return
-      }
-
-      navigate(ROUTES.dashboard, { replace: true })
+      const target = await resolvePostAuthPath()
+      navigate(target, { replace: true })
     }
 
     run()

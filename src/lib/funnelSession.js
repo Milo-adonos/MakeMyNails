@@ -1,6 +1,7 @@
 import { createCheckoutSession, openStripeCheckout } from './stripe'
 import { supabase } from './supabase'
 import i18n from '../i18n'
+import { ROUTES } from './routes'
 import {
   persistFunnelGenData as persistGenData,
   getFunnelGenData as readGenData,
@@ -61,6 +62,42 @@ export function getFunnelStep() {
 
 export function clearFunnelStep() {
   sessionStorage.removeItem(STEP_KEY)
+}
+
+/** Après paiement ou login abonnée : évite de renvoyer vers Stripe. */
+export function clearFunnelCheckoutState() {
+  clearSelectedPlan()
+  clearFunnelStep()
+}
+
+export async function getActiveSubscription(userId) {
+  const { data } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .maybeSingle()
+
+  return isSubscriptionActive(data) ? data : null
+}
+
+/** Où envoyer l'utilisatrice après connexion (dashboard vs checkout Stripe). */
+export async function resolvePostAuthPath({ fallback = ROUTES.dashboard } = {}) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user) return ROUTES.login
+
+  const activeSub = await getActiveSubscription(session.user.id)
+  if (activeSub) {
+    clearFunnelCheckoutState()
+    return ROUTES.dashboard
+  }
+
+  if (getSelectedPlan()) {
+    persistFunnelStep('checkout')
+    return ROUTES.stripeCheckout
+  }
+
+  return fallback
 }
 
 export async function persistFunnelGenData(data) {

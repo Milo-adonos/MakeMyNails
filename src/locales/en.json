@@ -344,6 +344,8 @@
       "urgency": "Launch offer — limited-time pricing ⏳",
       "moneyBack": "30-day money-back guarantee",
       "designsToday": "designs created today",
+      "paymentCanceled": "Payment canceled — you can try again anytime 💅",
+      "paymentFailed": "Payment didn't go through. Please try again or use another payment method.",
       "paymentError": "Error: {{message}}"
     },
     "signup": {

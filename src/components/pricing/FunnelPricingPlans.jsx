@@ -3,7 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Check } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { SUBSCRIPTIONS } from '../../lib/stripe'
-import { setSelectedPlan } from '../../lib/funnelSession'
+import { setSelectedPlan, getSelectedPlan } from '../../lib/funnelSession'
+
+function planIdFromStored(stored) {
+  if (stored === 'exclusif_ia') return 'sub_exclusif_ia'
+  if (stored === 'premium') return 'sub_premium'
+  return 'sub_exclusif_ia'
+}
 
 function planI18nKey(planId) {
   return planId === 'sub_exclusif_ia' ? 'exclusif_ia' : 'premium'
@@ -19,7 +25,7 @@ function formatPrice(price, language) {
 
 export default function FunnelPricingPlans({ loading = null, onSelect }) {
   const { t, i18n } = useTranslation()
-  const [selectedId, setSelectedId] = useState('sub_exclusif_ia')
+  const [selectedId, setSelectedId] = useState(() => planIdFromStored(getSelectedPlan()))
 
   useEffect(() => {
     setSelectedPlan(selectedId)

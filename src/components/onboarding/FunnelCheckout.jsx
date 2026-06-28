@@ -5,7 +5,10 @@ import {
   getSelectedPlan,
   startStripeCheckoutFromSelectedPlan,
   persistFunnelStep,
+  getActiveSubscription,
+  clearFunnelCheckoutState,
 } from '../../lib/funnelSession'
+import { supabase } from '../../lib/supabase'
 import Processing from './Processing'
 import { ROUTES } from '../../lib/routes'
 
@@ -31,19 +34,40 @@ export default function FunnelCheckout() {
     started.current = true
     persistFunnelStep('checkout')
 
-    startStripeCheckoutFromSelectedPlan()
-      .catch((err) => {
+    const run = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) {
+        navigate(`${ROUTES.login}?redirect=${encodeURIComponent(ROUTES.stripeCheckout)}`, { replace: true })
+        return
+      }
+
+      const activeSub = await getActiveSubscription(session.user.id)
+      const selected = getSelectedPlan()
+      const selectedPlanKey = selected === 'exclusif_ia' ? 'exclusif_ia' : 'premium'
+
+      if (activeSub?.plan === selectedPlanKey) {
+        clearFunnelCheckoutState()
+        navigate(ROUTES.dashboard, { replace: true })
+        return
+      }
+
+      try {
+        await startStripeCheckoutFromSelectedPlan()
+      } catch (err) {
         started.current = false
         const message = err?.message || t('funnel.checkout.paymentFailed')
         console.error(err)
 
         if (/connecte|authenti|non authent|log in|logged in/i.test(message)) {
-          navigate(ROUTES.signup, { replace: true })
+          navigate(`${ROUTES.login}?redirect=${encodeURIComponent(ROUTES.stripeCheckout)}`, { replace: true })
           return
         }
 
         setError(message)
-      })
+      }
+    }
+
+    run()
 
     return undefined
   }, [navigate, t])
@@ -56,7 +80,7 @@ export default function FunnelCheckout() {
           <p className="text-red-400/80 text-sm mb-6 bg-red-50 rounded-xl px-3 py-2">{error}</p>
           <button
             type="button"
-            onClick={() => navigate(ROUTES.pricing, { replace: true })}
+            onClick={() => navigate(`${ROUTES.pricing}?payment=failed`, { replace: true })}
             className="w-full bg-brown text-offwhite py-4 rounded-2xl font-semibold hover:bg-brown-light transition-colors"
           >
             {t('funnel.checkout.backToPricing')}

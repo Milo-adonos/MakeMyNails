@@ -3,6 +3,7 @@ import { generateFromFunnelPayload } from './api'
 import {
   getFunnelGenData,
   clearFunnelSession,
+  clearFunnelCheckoutState,
   persistFunnelResult,
   mapVisualizationToResult,
 } from './funnelSession'
@@ -99,6 +100,7 @@ export async function runPostPaymentGeneration(deps) {
           const result = buildResultFromViz(existing, stored)
           persistFunnelResult(result)
           clearFunnelSession()
+          clearFunnelCheckoutState()
           sessionStorage.removeItem(PENDING_VIZ_KEY)
           await deps.fetchHistory?.()
           notify({ status: 'success', result, error: null })
@@ -155,6 +157,7 @@ export async function runPostPaymentGeneration(deps) {
 
       clearFunnelSession()
       sessionStorage.removeItem(PENDING_VIZ_KEY)
+      clearFunnelCheckoutState()
       await deps.fetchHistory?.()
 
       notify({ status: 'success', result: enrichedResult, error: null })
